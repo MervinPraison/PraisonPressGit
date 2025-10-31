@@ -295,25 +295,25 @@ class Bootstrap {
                         <?php if (isset($stats['total_posts'])): ?>
                         <tr>
                             <td><strong>Posts:</strong></td>
-                            <td><?php echo $stats['total_posts']; ?></td>
+                            <td><?php echo esc_html( $stats['total_posts'] ); ?></td>
                         </tr>
                         <?php endif; ?>
                         <?php if (isset($stats['total_lyrics'])): ?>
                         <tr>
                             <td><strong>Lyrics:</strong></td>
-                            <td><?php echo $stats['total_lyrics']; ?></td>
+                            <td><?php echo esc_html( $stats['total_lyrics'] ); ?></td>
                         </tr>
                         <?php endif; ?>
                         <?php if (isset($stats['total_recipes'])): ?>
                         <tr>
                             <td><strong>Recipes:</strong></td>
-                            <td><?php echo $stats['total_recipes']; ?></td>
+                            <td><?php echo esc_html( $stats['total_recipes'] ); ?></td>
                         </tr>
                         <?php endif; ?>
                         <?php if (isset($stats['total_pages'])): ?>
                         <tr>
                             <td><strong>Pages:</strong></td>
-                            <td><?php echo $stats['total_pages']; ?></td>
+                            <td><?php echo esc_html( $stats['total_pages'] ); ?></td>
                         </tr>
                         <?php endif; ?>
                         <tr>
@@ -416,25 +416,25 @@ status: "publish"
         <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
             <?php if (isset($stats['total_posts'])): ?>
             <div style="flex: 1; min-width: 80px; text-align: center;">
-                <strong style="font-size: 24px; display: block;"><?php echo $stats['total_posts']; ?></strong>
+                <strong style="font-size: 24px; display: block;"><?php echo esc_html( $stats['total_posts'] ); ?></strong>
                 <span style="color: #666; font-size: 11px;">Posts</span>
             </div>
             <?php endif; ?>
             <?php if (isset($stats['total_lyrics'])): ?>
             <div style="flex: 1; min-width: 80px; text-align: center;">
-                <strong style="font-size: 24px; display: block;"><?php echo $stats['total_lyrics']; ?></strong>
+                <strong style="font-size: 24px; display: block;"><?php echo esc_html( $stats['total_lyrics'] ); ?></strong>
                 <span style="color: #666; font-size: 11px;">Lyrics</span>
             </div>
             <?php endif; ?>
             <?php if (isset($stats['total_recipes'])): ?>
             <div style="flex: 1; min-width: 80px; text-align: center;">
-                <strong style="font-size: 24px; display: block;"><?php echo $stats['total_recipes']; ?></strong>
+                <strong style="font-size: 24px; display: block;"><?php echo esc_html( $stats['total_recipes'] ); ?></strong>
                 <span style="color: #666; font-size: 11px;">Recipes</span>
             </div>
             <?php endif; ?>
             <?php if (isset($stats['total_pages'])): ?>
             <div style="flex: 1; min-width: 80px; text-align: center;">
-                <strong style="font-size: 24px; display: block;"><?php echo $stats['total_pages']; ?></strong>
+                <strong style="font-size: 24px; display: block;"><?php echo esc_html( $stats['total_pages'] ); ?></strong>
                 <span style="color: #666; font-size: 11px;">Pages</span>
             </div>
             <?php endif; ?>
@@ -447,7 +447,7 @@ status: "publish"
         </div>
         
         <p style="margin: 10px 0; padding-top: 10px; border-top: 1px solid #ddd;">
-            <strong>Last Modified:</strong> <?php echo $stats['last_modified']; ?>
+            <p><strong>Last Update:</strong> <?php echo esc_html( gmdate( 'Y-m-d H:i:s', strtotime( $stats['last_modified'] ) ) ); ?></p>
         </p>
         
         <p style="margin-top: 15px;">

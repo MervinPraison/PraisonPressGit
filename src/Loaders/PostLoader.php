@@ -260,7 +260,7 @@ class PostLoader {
         $base_dir = PRAISON_CONTENT_DIR;
         $stats = [
             'cache_active' => CacheManager::isActive(),
-            'last_modified' => $this->getLastModified(),
+            'last_modified' => current_time('mysql'),
         ];
         
         // Dynamically scan all directories for markdown files

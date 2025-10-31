@@ -75,7 +75,7 @@ class HistoryPage {
                                     </td>
                                     <td>
                                         <strong><?php echo esc_html($commit['date']); ?></strong><br>
-                                        <small style="color: #666;"><?php echo human_time_diff($commit['timestamp']) . ' ago'; ?></small>
+                                        <small style="color: #666;"><?php echo esc_html( human_time_diff( $commit['timestamp'] ) . ' ago' ); ?></small>
                                     </td>
                                     <td>
                                         <?php echo get_avatar($commit['email'], 32); ?>
@@ -86,14 +86,14 @@ class HistoryPage {
                                     </td>
                                     <td>
                                         <code style="background: #f0f0f1; padding: 3px 6px; border-radius: 3px;">
-                                            <?php echo substr($commit['hash'], 0, 7); ?>
+                                            <?php echo esc_html( substr( $commit['hash'], 0, 7 ) ); ?>
                                         </code>
                                     </td>
                                     <td>
-                                        <a href="<?php echo admin_url('admin.php?page=praisonpress-history&action=view&hash=' . $commit['hash']); ?>" 
+                                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=praisonpress-history&action=view&hash=' . $commit['hash'] ) ); ?>" 
                                            class="button button-small">View</a>
                                         <?php if ($index > 0): ?>
-                                            <a href="<?php echo wp_nonce_url(admin_url('admin-post.php?action=praison_rollback&hash=' . $commit['hash']), 'praison_rollback'); ?>" 
+                                            <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=praison_rollback&hash=' . $commit['hash'] ), 'praison_rollback' ) ); ?>" 
                                                class="button button-small"
                                                onclick="return confirm('Rollback to this version?');">Rollback</a>
                                         <?php endif; ?>

@@ -114,7 +114,7 @@ class GitManager {
                     'email' => $parts[2],
                     'timestamp' => (int)$parts[3],
                     'message' => $parts[4],
-                    'date' => date('Y-m-d H:i:s', (int)$parts[3]),
+                    'date' => gmdate( 'Y-m-d H:i:s', (int) $parts[3] ),
                 ];
             }
         }
