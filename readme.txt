@@ -20,7 +20,7 @@ Load WordPress content from files (Markdown, JSON, YAML) without database writes
 * **No Database Writes** - Pure read-only approach for content
 * **Git Version Control** - Track changes with full Git integration
 * **Dynamic Post Type Discovery** - Automatically registers post types from directory structure
-* **Custom URL Routing** - Beautiful URLs for any post type (e.g., `/lyrics/song-name`)
+* **Custom URL Routing** - Beautiful URLs for any post type (e.g., `/recipes/song-name`)
 * **YAML Front Matter** - Rich metadata support
 * **Caching System** - Built-in performance optimization
 * **Auto-Update Detection** - Content updates automatically when files change

@@ -57,6 +57,8 @@ class CacheManager {
         global $wpdb;
         
         $pattern = '_transient_' . self::$group . '_%';
+        // Direct database query is necessary here for cache clearing
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $cleared = $wpdb->query(
             $wpdb->prepare(
                 "DELETE FROM $wpdb->options WHERE option_name LIKE %s OR option_name LIKE %s",

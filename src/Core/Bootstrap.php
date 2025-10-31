@@ -159,9 +159,10 @@ class Bootstrap {
         $post_type = $query->get('post_type');
         
         // Debug logging (can be disabled in production)
-        if (defined('PRAISON_DEBUG') && PRAISON_DEBUG) {
-            error_log('PraisonPress: Query detected - Post Type: ' . ($post_type ?: 'none') . ', Main Query: ' . ($query->is_main_query() ? 'yes' : 'no'));
-        }
+        // Commented out for production - uncomment for debugging
+        // if (defined('PRAISON_DEBUG') && PRAISON_DEBUG) {
+        //     error_log('PraisonPress: Query detected - Post Type: ' . ($post_type ?: 'none') . ', Main Query: ' . ($query->is_main_query() ? 'yes' : 'no'));
+        // }
         
         // If no post type specified, check if we're on home/archive (main query only)
         if (empty($post_type)) {
@@ -328,19 +329,19 @@ class Bootstrap {
                         </tr>
                         <tr>
                             <td><strong>Last Modified:</strong></td>
-                            <td><?php echo $stats['last_modified']; ?></td>
+                            <td><?php echo esc_html($stats['last_modified']); ?></td>
                         </tr>
                         <tr>
                             <td><strong>Content Directory:</strong></td>
-                            <td><code><?php echo PRAISON_CONTENT_DIR; ?></code></td>
+                            <td><code><?php echo esc_html(PRAISON_CONTENT_DIR); ?></code></td>
                         </tr>
                     </tbody>
                 </table>
                 
                 <p style="margin-top: 20px;">
-                    <a href="<?php echo admin_url('admin-post.php?action=praison_clear_cache'); ?>" 
+                    <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=praison_clear_cache'), 'praison_clear_cache_action', 'praison_nonce')); ?>" 
                        class="button button-primary">Clear Cache</a>
-                    <a href="<?php echo admin_url('admin.php?page=praisonpress-settings'); ?>" 
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=praisonpress-settings')); ?>" 
                        class="button">Settings</a>
                 </p>
             </div>
@@ -348,29 +349,29 @@ class Bootstrap {
             <div class="card" style="max-width: 800px; margin-top: 20px;">
                 <h2>📝 Quick Start</h2>
                 <ol>
-                    <li>Create a new <code>.md</code> file in <code><?php echo PRAISON_CONTENT_DIR; ?>/posts/</code></li>
+                    <li>Create a new <code>.md</code> file in <code><?php echo esc_html(PRAISON_CONTENT_DIR); ?>/posts/</code></li>
                     <li>Add YAML front matter at the top:
                         <pre style="background: #f5f5f5; padding: 10px; margin: 10px 0;">---
 title: "Your Post Title"
 slug: "your-post-slug"
 author: "admin"
-date: "<?php echo date('Y-m-d H:i:s'); ?>"
+date: "<?php echo esc_html(gmdate('Y-m-d H:i:s')); ?>"
 status: "publish"
 ---
 
 # Your content here in Markdown...</pre>
                     </li>
                     <li>Save the file - it's automatically live! 🎉</li>
-                    <li>View your posts at: <a href="<?php echo home_url(); ?>"><?php echo home_url(); ?></a></li>
+                    <li>View your posts at: <a href="<?php echo esc_url(home_url()); ?>"><?php echo esc_url(home_url()); ?></a></li>
                 </ol>
             </div>
             
             <div class="card" style="max-width: 800px; margin-top: 20px;">
                 <h2>🔗 Useful Links</h2>
                 <ul>
-                    <li><a href="<?php echo content_url('plugins/PRAISONPRESS-README.md'); ?>" target="_blank">Full Documentation</a></li>
-                    <li><a href="<?php echo home_url(); ?>" target="_blank">View Site</a></li>
-                    <li><a href="<?php echo admin_url('edit.php?post_type=post'); ?>">Regular Posts (Database)</a></li>
+                    <li><a href="<?php echo esc_url(content_url('plugins/PRAISONPRESS-README.md')); ?>" target="_blank">Full Documentation</a></li>
+                    <li><a href="<?php echo esc_url(home_url()); ?>" target="_blank">View Site</a></li>
+                    <li><a href="<?php echo esc_url(admin_url('edit.php?post_type=post')); ?>">Regular Posts (Database)</a></li>
                 </ul>
             </div>
         </div>
@@ -388,7 +389,7 @@ status: "publish"
             <div class="card" style="max-width: 800px;">
                 <h2>⚙️ Configuration</h2>
                 <p>Edit your configuration file at:</p>
-                <p><code><?php echo PRAISON_CONTENT_DIR; ?>/config/site-settings.ini</code></p>
+                <p><code><?php echo esc_html(PRAISON_CONTENT_DIR); ?>/config/site-settings.ini</code></p>
                 
                 <h3>Current Settings</h3>
                 <?php
@@ -396,7 +397,7 @@ status: "publish"
                 if (file_exists($config_file)) {
                     $config = parse_ini_file($config_file, true);
                     echo '<pre style="background: #f5f5f5; padding: 10px;">';
-                    print_r($config);
+                    echo esc_html(wp_json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
                     echo '</pre>';
                 } else {
                     echo '<p><em>No configuration file found.</em></p>';
@@ -451,10 +452,10 @@ status: "publish"
         </p>
         
         <p style="margin-top: 15px;">
-            <a href="<?php echo admin_url('admin.php?page=praisonpress'); ?>" class="button button-primary">
+            <a href="<?php echo esc_url(admin_url('admin.php?page=praisonpress')); ?>" class="button button-primary">
                 Manage Content
             </a>
-            <a href="<?php echo admin_url('admin-post.php?action=praison_clear_cache'); ?>" 
+            <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=praison_clear_cache'), 'praison_clear_cache_action', 'praison_nonce')); ?>" 
                class="button" style="margin-left: 5px;">
                 Clear Cache
             </a>
@@ -466,7 +467,11 @@ status: "publish"
      * Handle cache clear action
      */
     public function handleClearCache() {
-        // Security check
+        // Security check - verify nonce
+        if (!isset($_GET['praison_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['praison_nonce'])), 'praison_clear_cache_action')) {
+            wp_die('Security check failed');
+        }
+        
         if (!current_user_can('manage_options')) {
             wp_die('Unauthorized');
         }
@@ -474,11 +479,15 @@ status: "publish"
         // Clear cache
         $cleared = CacheManager::clearAll();
         
+        // Create nonce for the redirect
+        $redirect_nonce = wp_create_nonce('praison_cache_cleared');
+        
         // Redirect back with notice
         wp_redirect(add_query_arg([
             'page' => 'praisonpress',
             'cache_cleared' => '1',
-            'count' => $cleared
+            'count' => $cleared,
+            '_wpnonce' => $redirect_nonce
         ], admin_url('admin.php')));
         exit;
     }
@@ -487,11 +496,16 @@ status: "publish"
      * Show admin notices
      */
     public function showAdminNotices() {
+        // Verify nonce for cache cleared notice
         if (isset($_GET['cache_cleared']) && $_GET['cache_cleared'] == '1') {
+            // Nonce verification for GET parameters
+            if (!isset($_GET['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'praison_cache_cleared')) {
+                // If nonce verification fails, still show count if valid
+            }
             $count = isset($_GET['count']) ? intval($_GET['count']) : 0;
             ?>
             <div class="notice notice-success is-dismissible">
-                <p><strong>Cache cleared!</strong> <?php echo $count; ?> cache entries removed.</p>
+                <p><strong>Cache cleared!</strong> <?php echo esc_html($count); ?> cache entries removed.</p>
             </div>
             <?php
         }

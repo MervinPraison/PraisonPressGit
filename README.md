@@ -8,7 +8,7 @@
 - **Version Control Ready**: Designed to work with Git for tracking content changes
 - **No Database Writes**: Read-only approach - content stays in files
 - **Dynamic Post Type Discovery**: Automatically registers custom post types based on directory structure
-- **Custom URL Routing**: Support for custom post type routing (e.g., `/lyrics/xxx`, `/posts/xxx`)
+- **Custom URL Routing**: Support for custom post type routing (e.g., `/recipes/xxx`, `/posts/xxx`)
 - **Cache Management**: Built-in caching system for optimal performance
 - **Front Matter Support**: YAML front matter for metadata
 - **Markdown Parsing**: Full Markdown support with automatic HTML conversion
@@ -27,7 +27,6 @@ This is a Must-Use (MU) plugin, which means it's automatically loaded by WordPre
 /content/
 ├── posts/              # Blog posts
 ├── pages/              # Static pages
-├── lyrics/             # Custom post type: Lyrics
 ├── recipes/            # Custom post type: Recipes
 └── config/             # Configuration files
 ```
@@ -59,12 +58,12 @@ Write your content in Markdown format.
 Simply create a new directory in `/content/` to add a custom post type:
 
 ```bash
-mkdir /content/lyrics
+mkdir /content/recipes
 ```
 
 The plugin will automatically:
-- Register the `lyrics` post type
-- Create the URL route `/lyrics/{slug}`
+- Register the `recipes` post type
+- Create the URL route `/recipes/{slug}`
 - Load content from the directory
 
 ## Requirements

@@ -303,6 +303,6 @@ class PostLoader {
         $mtimes = array_map('filemtime', $files);
         $latest = max($mtimes);
         
-        return date('Y-m-d H:i:s', $latest);
+        return gmdate('Y-m-d H:i:s', $latest);
     }
 }
