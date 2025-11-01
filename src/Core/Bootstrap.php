@@ -163,8 +163,9 @@ class Bootstrap {
      * @return array|null
      */
     public function injectFilePosts($posts, $query) {
-        // Skip injection in admin/CLI contexts to prevent breaking WP_Query during export
-        if (is_admin() || (defined('WP_CLI') && WP_CLI)) {
+        // Skip injection only in specific admin contexts (not AJAX, not frontend)
+        // This allows file-based posts to load on frontend while preventing export issues
+        if ((is_admin() && !wp_doing_ajax()) || (defined('WP_CLI') && WP_CLI)) {
             return $posts;
         }
         
@@ -180,7 +181,10 @@ class Bootstrap {
         // If no post type specified, check if we're on home/archive (main query only)
         if (empty($post_type)) {
             if ($query->is_main_query() && (is_home() || is_archive())) {
-                return $this->postLoaders['posts']->loadPosts($query);
+                // Check if posts loader exists before calling
+                if (isset($this->postLoaders['posts'])) {
+                    return $this->postLoaders['posts']->loadPosts($query);
+                }
             }
             return $posts;
         }
@@ -309,7 +313,12 @@ class Bootstrap {
      * Render admin page
      */
     public function renderAdminPage() {
-        $stats = $this->postLoaders['posts']->getStats();
+        // Get stats safely, handling case where content directories don't exist
+        $stats = isset($this->postLoaders['posts']) ? $this->postLoaders['posts']->getStats() : [
+            'total_posts' => 0,
+            'cache_active' => false,
+            'content_dir' => PRAISON_CONTENT_DIR . '/posts'
+        ];
         
         ?>
         <div class="wrap">
