@@ -26,6 +26,20 @@ class GitHubClient {
     }
     
     /**
+     * Check if authenticated
+     */
+    public function isAuthenticated() {
+        return !empty($this->accessToken);
+    }
+    
+    /**
+     * Make POST request
+     */
+    public function post($endpoint, $data = null) {
+        return $this->request($endpoint, 'POST', $data);
+    }
+    
+    /**
      * Make API request
      */
     private function request($endpoint, $method = 'GET', $data = null) {

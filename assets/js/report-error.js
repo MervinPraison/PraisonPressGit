@@ -52,7 +52,9 @@
                 data: {
                     action: 'praisonpress_get_content',
                     nonce: praisonpressData.nonce,
-                    post_id: praisonpressData.postId
+                    post_id: praisonpressData.postId,
+                    post_type: praisonpressData.postType,
+                    post_slug: praisonpressData.postSlug
                 },
                 success: function(response) {
                     $loading.hide();
@@ -61,6 +63,10 @@
                         $editor.val(response.data.content);
                         $modal.fadeIn(200);
                         $editor.focus();
+                        
+                        // Store data for PR creation
+                        window.praisonpressPostTitle = response.data.title || '';
+                        window.praisonpressFilePath = response.data.file_path || '';
                     } else {
                         alert('Error loading content: ' + (response.data.message || 'Unknown error'));
                     }
@@ -94,24 +100,62 @@
             }
             
             // Disable submit button
-            $submitBtn.prop('disabled', true).text('Submitting...');
+            $submitBtn.prop('disabled', true).text('Creating pull request...');
             
-            // TODO: Phase 5 - Create pull request with the edited content
-            // For now, just show a success message
-            
-            // Simulate API call
-            setTimeout(function() {
-                alert('Thank you for your contribution! Your edit will be reviewed by an admin.');
-                closeModal();
-                $submitBtn.prop('disabled', false).text('Submit Edit');
-            }, 1000);
-            
-            // In Phase 5, we'll implement:
-            // 1. Create a new branch
-            // 2. Commit the changes
-            // 3. Push to GitHub
-            // 4. Create a pull request
-            // 5. Show success message with PR link
+            // Create pull request via AJAX
+            $.ajax({
+                url: praisonpressData.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'praisonpress_submit_edit',
+                    nonce: praisonpressData.nonce,
+                    content: content,
+                    description: description,
+                    post_id: praisonpressData.postId,
+                    post_type: praisonpressData.postType,
+                    post_slug: praisonpressData.postSlug,
+                    post_title: window.praisonpressPostTitle || '',
+                    file_path: window.praisonpressFilePath || ''
+                },
+                success: function(response) {
+                    if (response.success) {
+                        let message = response.data.message;
+                        
+                        if (response.data.pr_url) {
+                            message += '\n\nView pull request: ' + response.data.pr_url;
+                            
+                            // Show success with link
+                            const prLink = '<a href="' + response.data.pr_url + '" target="_blank" style="color: #0073aa; text-decoration: underline;">View Pull Request #' + response.data.pr_number + '</a>';
+                            const successHtml = '<div style="padding: 20px; text-align: center;">' +
+                                '<h3 style="color: #00a32a; margin-bottom: 10px;">✅ Pull Request Created!</h3>' +
+                                '<p>' + response.data.message + '</p>' +
+                                '<p style="margin-top: 15px;">' + prLink + '</p>' +
+                                '<p style="margin-top: 15px; font-size: 14px; color: #666;">An admin will review your changes soon.</p>' +
+                                '</div>';
+                            
+                            $('.praisonpress-modal-body').html(successHtml);
+                            $('.praisonpress-modal-footer').hide();
+                            
+                            // Auto-close after 10 seconds
+                            setTimeout(function() {
+                                closeModal();
+                                location.reload(); // Refresh to show updated content
+                            }, 10000);
+                        } else {
+                            alert(message);
+                            closeModal();
+                        }
+                    } else {
+                        alert('Error: ' + (response.data.message || 'Failed to create pull request'));
+                    }
+                    
+                    $submitBtn.prop('disabled', false).text('Submit Edit');
+                },
+                error: function() {
+                    alert('Error creating pull request. Please try again.');
+                    $submitBtn.prop('disabled', false).text('Submit Edit');
+                }
+            });
         }
     });
     

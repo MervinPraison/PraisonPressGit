@@ -20,6 +20,9 @@ class ReportErrorButton {
         // Register AJAX endpoints
         add_action('wp_ajax_praisonpress_get_content', [$this, 'ajaxGetContent']);
         add_action('wp_ajax_nopriv_praisonpress_get_content', [$this, 'ajaxGetContent']);
+        
+        add_action('wp_ajax_praisonpress_submit_edit', [$this, 'ajaxSubmitEdit']);
+        add_action('wp_ajax_nopriv_praisonpress_submit_edit', [$this, 'ajaxSubmitEdit']);
     }
     
     /**
@@ -49,11 +52,13 @@ class ReportErrorButton {
         );
         
         // Pass data to JavaScript
+        global $post;
         wp_localize_script('praisonpress-report-error', 'praisonpressData', [
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('praisonpress_report_error'),
             'postId' => get_the_ID(),
             'postType' => get_post_type(),
+            'postSlug' => isset($post->post_name) ? $post->post_name : '',
         ]);
     }
     
@@ -124,17 +129,49 @@ class ReportErrorButton {
         // Verify nonce
         check_ajax_referer('praisonpress_report_error', 'nonce');
         
-        $postId = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+        $postId = isset($_POST['post_id']) ? $_POST['post_id'] : 0;
+        $postType = isset($_POST['post_type']) ? sanitize_text_field($_POST['post_type']) : 'post';
         
         if (!$postId) {
             wp_send_json_error(['message' => 'Invalid post ID']);
         }
         
-        $post = get_post($postId);
+        // Try to get post - works for both DB and file-based posts
+        global $wp_query;
+        $originalQuery = $wp_query;
         
-        if (!$post) {
-            wp_send_json_error(['message' => 'Post not found']);
+        // Create a new query for this specific post
+        $args = [
+            'post_type' => $postType,
+            'p' => $postId,
+            'posts_per_page' => 1,
+        ];
+        
+        $query = new \WP_Query($args);
+        
+        if (!$query->have_posts()) {
+            // Try by slug if ID doesn't work (for file-based posts)
+            $slug = get_query_var('name');
+            if (empty($slug) && isset($_POST['post_slug'])) {
+                $slug = sanitize_title($_POST['post_slug']);
+            }
+            
+            if ($slug) {
+                $args = [
+                    'post_type' => $postType,
+                    'name' => $slug,
+                    'posts_per_page' => 1,
+                ];
+                $query = new \WP_Query($args);
+            }
         }
+        
+        if (!$query->have_posts()) {
+            wp_send_json_error(['message' => 'Post not found. Post ID: ' . $postId . ', Type: ' . $postType]);
+        }
+        
+        $query->the_post();
+        $post = get_post();
         
         // Get the raw markdown content if it's a file-based post
         $contentFile = $this->getContentFilePath($post);
@@ -146,10 +183,21 @@ class ReportErrorButton {
             $content = $post->post_content;
         }
         
+        // Restore original query
+        $wp_query = $originalQuery;
+        wp_reset_postdata();
+        
+        // Ensure we have a valid file path
+        if (!$contentFile) {
+            // Try to construct the path
+            $contentFile = $this->getContentFilePath($post);
+        }
+        
         wp_send_json_success([
             'content' => $content,
             'title' => $post->post_title,
             'post_type' => $post->post_type,
+            'file_path' => $contentFile ? $contentFile : '',
         ]);
     }
     
@@ -183,6 +231,84 @@ class ReportErrorButton {
             }
         }
         
+        // Try with date prefix (e.g., 2025-11-01-slug.md)
+        if (is_dir($contentDir . '/' . $postType)) {
+            $files = glob($contentDir . '/' . $postType . '/*' . $slug . '.md');
+            if (!empty($files)) {
+                return $files[0];
+            }
+        }
+        
         return false;
+    }
+    
+    /**
+     * AJAX handler to submit edit and create PR
+     */
+    public function ajaxSubmitEdit() {
+        // Verify nonce
+        check_ajax_referer('praisonpress_report_error', 'nonce');
+        
+        // Get data
+        $content = isset($_POST['content']) ? wp_unslash($_POST['content']) : '';
+        $description = isset($_POST['description']) ? sanitize_textarea_field($_POST['description']) : '';
+        $postId = isset($_POST['post_id']) ? $_POST['post_id'] : 0;
+        $postType = isset($_POST['post_type']) ? sanitize_text_field($_POST['post_type']) : 'post';
+        $postSlug = isset($_POST['post_slug']) ? sanitize_title($_POST['post_slug']) : '';
+        $postTitle = isset($_POST['post_title']) ? sanitize_text_field($_POST['post_title']) : '';
+        $filePath = isset($_POST['file_path']) ? $_POST['file_path'] : '';
+        
+        // Validate
+        if (empty($content)) {
+            wp_send_json_error(['message' => 'Content cannot be empty']);
+        }
+        
+        // If no file path, create one for database posts
+        if (empty($filePath)) {
+            // Construct file path for database post
+            $contentDir = PRAISON_CONTENT_DIR;
+            $filePath = $contentDir . '/' . $postType . '/' . $postSlug . '.md';
+            
+            // Ensure directory exists
+            $dir = dirname($filePath);
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+        }
+        
+        // Security check: ensure file path is within content directory
+        $realPath = realpath(dirname($filePath));
+        $contentDirReal = realpath(PRAISON_CONTENT_DIR);
+        
+        if (!$realPath || strpos($realPath, $contentDirReal) !== 0) {
+            wp_send_json_error(['message' => 'Invalid file path']);
+        }
+        
+        // Initialize PR manager
+        require_once PRAISON_PLUGIN_DIR . '/src/GitHub/PullRequestManager.php';
+        require_once PRAISON_PLUGIN_DIR . '/src/Git/GitManager.php';
+        
+        $prManager = new \PraisonPress\GitHub\PullRequestManager();
+        
+        // Prepare post data
+        $postData = [
+            'id' => $postId,
+            'type' => $postType,
+            'slug' => $postSlug,
+            'title' => $postTitle,
+        ];
+        
+        // Create pull request
+        $result = $prManager->createPullRequest($filePath, $content, $description, $postData);
+        
+        if ($result['success']) {
+            wp_send_json_success([
+                'message' => $result['message'],
+                'pr_url' => isset($result['pr_url']) ? $result['pr_url'] : '',
+                'pr_number' => isset($result['pr_number']) ? $result['pr_number'] : '',
+            ]);
+        } else {
+            wp_send_json_error(['message' => $result['message']]);
+        }
     }
 }
