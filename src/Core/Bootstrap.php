@@ -86,6 +86,9 @@ class Bootstrap {
         // Cache management
         add_action('admin_post_praison_clear_cache', [$this, 'handleClearCache']);
         
+        // Rollback handler
+        add_action('admin_post_praison_rollback', [$this, 'handleRollback']);
+        
         // Admin notices
         add_action('admin_notices', [$this, 'showAdminNotices']);
     }
@@ -356,7 +359,7 @@ class Bootstrap {
             'id'     => 'praisonpress-clear-cache',
             'parent' => 'praisonpress-menu',
             'title'  => 'Clear Cache',
-            'href'   => admin_url('admin-post.php?action=praison_clear_cache'),
+            'href'   => wp_nonce_url(admin_url('admin-post.php?action=praison_clear_cache'), 'praison_clear_cache_action', 'praison_nonce'),
         ]);
         
         $wp_admin_bar->add_node([
@@ -800,12 +803,44 @@ repository_url = "https://github.com/MervinPraison/PraisonPressContent"</pre>
         wp_redirect(add_query_arg([
             'page' => 'praisonpress',
             'cache_cleared' => '1',
-            'count' => $cleared,
             '_wpnonce' => $redirect_nonce
         ], admin_url('admin.php')));
         exit;
     }
     
+    /**
+     * Handle rollback action
+     */
+    public function handleRollback() {
+        if (!isset($_GET['hash']) || !isset($_GET['_wpnonce'])) {
+            wp_die('Invalid request');
+        }
+        
+        $hash = sanitize_text_field($_GET['hash']);
+        
+        if (!wp_verify_nonce($_GET['_wpnonce'], 'rollback_' . $hash)) {
+            wp_die('Security check failed');
+        }
+        
+        $gitManager = new \PraisonPress\Git\GitManager();
+        // Pass null for file to rollback entire repository to this commit
+        $result = $gitManager->rollback(null, $hash);
+        
+        // Redirect back to history page with status
+        if ($result) {
+            wp_redirect(add_query_arg([
+                'page' => 'praisonpress-history',
+                'rollback' => 'success'
+            ], admin_url('admin.php')));
+        } else {
+            wp_redirect(add_query_arg([
+                'page' => 'praisonpress-history',
+                'rollback' => 'error'
+            ], admin_url('admin.php')));
+        }
+        exit;
+    }
+
     /**
      * Show admin notices
      */

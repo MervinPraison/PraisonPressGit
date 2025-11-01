@@ -68,12 +68,12 @@
                         window.praisonpressPostTitle = response.data.title || '';
                         window.praisonpressFilePath = response.data.file_path || '';
                     } else {
-                        alert('Error loading content: ' + (response.data.message || 'Unknown error'));
+                        showErrorModal('Error', 'Error loading content: ' + (response.data.message || 'Unknown error'));
                     }
                 },
                 error: function() {
                     $loading.hide();
-                    alert('Error loading content. Please try again.');
+                    showErrorModal('Error', 'Error loading content. Please try again.');
                 }
             });
         }
@@ -95,7 +95,7 @@
             const description = $description.val();
             
             if (!content.trim()) {
-                alert('Content cannot be empty.');
+                showErrorModal('Validation Error', 'Content cannot be empty.');
                 return;
             }
             
@@ -142,18 +142,75 @@
                                 location.reload(); // Refresh to show updated content
                             }, 10000);
                         } else {
-                            alert(message);
-                            closeModal();
+                            showErrorModal('Success', message);
+                            setTimeout(function() {
+                                closeModal();
+                                location.reload();
+                            }, 3000);
                         }
                     } else {
-                        alert('Error: ' + (response.data.message || 'Failed to create pull request'));
+                        showErrorModal('Error', response.data.message || 'Failed to create pull request');
                     }
                     
                     $submitBtn.prop('disabled', false).text('Submit Edit');
                 },
                 error: function() {
-                    alert('Error creating pull request. Please try again.');
+                    showErrorModal('Error', 'Error creating pull request. Please try again.');
                     $submitBtn.prop('disabled', false).text('Submit Edit');
+                }
+            });
+        }
+        
+        /**
+         * Show error modal
+         */
+        function showErrorModal(title, message) {
+            // Remove existing error modal if any
+            $('#praisonpress-error-modal').remove();
+            
+            // Create modal HTML
+            var modalHtml = '<div id="praisonpress-error-modal" style="display: none;">' +
+                '<div class="praisonpress-modal-overlay"></div>' +
+                '<div class="praisonpress-modal-dialog">' +
+                    '<div class="praisonpress-modal-content">' +
+                        '<div class="praisonpress-modal-header" style="background: #dc3232; border-color: #dc3232;">' +
+                            '<h3 style="margin: 0; color: white;">' + title + '</h3>' +
+                            '<button type="button" class="praisonpress-error-close" style="background: none; border: none; color: white; font-size: 28px; line-height: 1; cursor: pointer;">&times;</button>' +
+                        '</div>' +
+                        '<div class="praisonpress-modal-body">' +
+                            '<p style="margin: 0; white-space: pre-wrap;">' + message + '</p>' +
+                        '</div>' +
+                        '<div class="praisonpress-modal-footer" style="text-align: right;">' +
+                            '<button type="button" class="button praisonpress-error-close">Close</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+            
+            $('body').append(modalHtml);
+            $('#praisonpress-error-modal').fadeIn(200);
+            
+            // Close button handlers
+            $('.praisonpress-error-close').on('click', function() {
+                $('#praisonpress-error-modal').fadeOut(200, function() {
+                    $(this).remove();
+                });
+            });
+            
+            // Close on overlay click
+            $('#praisonpress-error-modal .praisonpress-modal-overlay').on('click', function() {
+                $('#praisonpress-error-modal').fadeOut(200, function() {
+                    $(this).remove();
+                });
+            });
+            
+            // Escape key
+            $(document).on('keydown.errormodal', function(e) {
+                if (e.key === 'Escape') {
+                    $('#praisonpress-error-modal').fadeOut(200, function() {
+                        $(this).remove();
+                    });
+                    $(document).off('keydown.errormodal');
                 }
             });
         }

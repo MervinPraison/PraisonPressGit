@@ -28,8 +28,20 @@ class HistoryPage {
         $status = $this->gitManager->getStatus();
         
         ?>
-        <div class="wrap">
+        <div class="wrap" style="max-width: 100%; margin-right: 0;">
             <h1>📜 Version History</h1>
+            
+            <?php if (isset($_GET['rollback']) && $_GET['rollback'] === 'success'): ?>
+                <div class="notice notice-success is-dismissible">
+                    <p><strong>✅ Rollback Successful!</strong></p>
+                    <p>Content has been rolled back to the selected version.</p>
+                </div>
+            <?php elseif (isset($_GET['rollback']) && $_GET['rollback'] === 'error'): ?>
+                <div class="notice notice-error is-dismissible">
+                    <p><strong>❌ Rollback Failed</strong></p>
+                    <p>Unable to rollback to the selected version. Please try again.</p>
+                </div>
+            <?php endif; ?>
             
             <?php if (!$status['available']): ?>
                 <div class="notice notice-warning">
@@ -56,11 +68,11 @@ class HistoryPage {
                     <p>Changes are automatically tracked when files are modified.</p>
                 </div>
             <?php else: ?>
-                <div class="card">
+                <div class="card" style="overflow-x: auto; max-width: none;">
                     <h2>Recent Changes (<?php echo count($history); ?>)</h2>
                     
                     <!-- Using native WordPress table styles -->
-                    <table class="wp-list-table widefat striped">
+                    <table class="wp-list-table widefat striped" style="width: 100%; table-layout: auto;">
                         <thead>
                             <tr>
                                 <th style="width: 50px;">Timeline</th>
@@ -100,9 +112,13 @@ class HistoryPage {
                                         <a href="<?php echo esc_url( admin_url( 'admin.php?page=praisonpress-history&action=view&hash=' . $commit['hash'] ) ); ?>" 
                                            class="button button-small">View</a>
                                         <?php if ($index > 0): ?>
-                                            <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=praison_rollback&hash=' . $commit['hash'] ), 'praison_rollback' ) ); ?>" 
-                                               class="button button-small"
-                                               onclick="return confirm('Rollback to this version?');">Rollback</a>
+                                            <button type="button" 
+                                                    class="button button-small praisonpress-rollback-btn" 
+                                                    data-hash="<?php echo esc_attr($commit['hash']); ?>"
+                                                    data-message="<?php echo esc_attr($commit['message']); ?>"
+                                                    data-nonce="<?php echo esc_attr(wp_create_nonce('rollback_' . $commit['hash'])); ?>">
+                                                Rollback
+                                            </button>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -124,6 +140,65 @@ class HistoryPage {
             </div>
         </div>
         
+        <!-- Rollback Confirmation Modal -->
+        <div id="praisonpress-rollback-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100000; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 4px; max-width: 500px; width: 90%; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                <div style="background: #0073aa; color: white; padding: 15px 20px; border-radius: 4px 4px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0; font-size: 18px;">Confirm Rollback</h2>
+                    <button type="button" class="praisonpress-modal-close" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
+                </div>
+                <div style="padding: 20px;">
+                    <p id="praisonpress-rollback-message" style="margin: 0 0 15px 0; font-size: 14px; line-height: 1.6;"></p>
+                    <p style="margin: 0; font-size: 13px; color: #d63638;"><strong>Warning:</strong> This will revert your content to this version. Current changes will be preserved in history.</p>
+                </div>
+                <div style="padding: 15px 20px; border-top: 1px solid #ddd; text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="button praisonpress-modal-close">Cancel</button>
+                    <button type="button" id="praisonpress-confirm-rollback" class="button button-primary">Rollback</button>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+        jQuery(document).ready(function($) {
+            var rollbackHash = '';
+            var rollbackNonce = '';
+            
+            $('.praisonpress-rollback-btn').on('click', function() {
+                var $btn = $(this);
+                rollbackHash = $btn.data('hash');
+                rollbackNonce = $btn.data('nonce');
+                var message = $btn.data('message');
+                
+                $('#praisonpress-rollback-message').text('Rollback to: ' + message);
+                $('#praisonpress-rollback-modal').css('display', 'flex').hide().fadeIn(200);
+            });
+            
+            $('.praisonpress-modal-close').on('click', function() {
+                $('#praisonpress-rollback-modal').fadeOut(200);
+            });
+            
+            $('#praisonpress-rollback-modal').on('click', function(e) {
+                if (e.target === this) {
+                    $(this).fadeOut(200);
+                }
+            });
+            
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' && $('#praisonpress-rollback-modal').is(':visible')) {
+                    $('#praisonpress-rollback-modal').fadeOut(200);
+                }
+            });
+            
+            $('#praisonpress-confirm-rollback').on('click', function() {
+                var $btn = $(this);
+                $btn.prop('disabled', true).text('Rolling back...');
+                
+                var url = '<?php echo esc_url(admin_url('admin-post.php')); ?>?action=praison_rollback&hash=' + rollbackHash + '&_wpnonce=' + rollbackNonce;
+                window.location.href = url;
+            });
+        });
+        </script>
+        
         <style>
             .card {
                 background: white;
@@ -131,6 +206,8 @@ class HistoryPage {
                 padding: 20px;
                 margin-top: 20px;
                 box-shadow: 0 1px 1px rgba(0,0,0,.04);
+                width: 100%;
+                box-sizing: border-box;
             }
             .card h2 {
                 margin-top: 0;
@@ -196,7 +273,35 @@ class HistoryPage {
             
             <div class="card" style="margin-top: 20px;">
                 <h2>Diff</h2>
-                <pre style="background: #f5f5f5; padding: 15px; overflow-x: auto; border: 1px solid #ddd; border-radius: 3px;"><?php echo esc_html($details['diff']); ?></pre>
+                <div style="background: #fff; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+                    <div style="font-family: 'Courier New', monospace; font-size: 12px; overflow-x: auto;">
+                        <?php
+                        $lines = explode("\n", $details['diff']);
+                        foreach ($lines as $line):
+                            $lineStyle = '';
+                            $lineClass = '';
+                            
+                            if (strpos($line, '+') === 0 && strpos($line, '+++') !== 0) {
+                                $lineStyle = 'background: #e6ffed; color: #24292f;';
+                                $lineClass = 'diff-add';
+                            } elseif (strpos($line, '-') === 0 && strpos($line, '---') !== 0) {
+                                $lineStyle = 'background: #ffebe9; color: #24292f;';
+                                $lineClass = 'diff-remove';
+                            } elseif (strpos($line, '@@') === 0) {
+                                $lineStyle = 'background: #f0f8ff; color: #0969da;';
+                                $lineClass = 'diff-header';
+                            } elseif (strpos($line, 'diff --git') === 0 || strpos($line, 'index ') === 0) {
+                                $lineStyle = 'background: #f6f8fa; color: #666;';
+                                $lineClass = 'diff-meta';
+                            } else {
+                                $lineStyle = 'background: #fff; color: #24292f;';
+                                $lineClass = 'diff-context';
+                            }
+                        ?>
+                            <div class="<?php echo esc_attr($lineClass); ?>" style="<?php echo esc_attr($lineStyle); ?> padding: 2px 10px; border-left: 3px solid transparent;"><?php echo esc_html($line); ?></div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -207,6 +312,8 @@ class HistoryPage {
                 padding: 20px;
                 margin-top: 20px;
                 box-shadow: 0 1px 1px rgba(0,0,0,.04);
+                width: 100%;
+                box-sizing: border-box;
             }
             .card h2 {
                 margin-top: 0;

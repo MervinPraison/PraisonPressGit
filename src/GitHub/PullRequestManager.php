@@ -135,7 +135,11 @@ class PullRequestManager {
         $oldDir = getcwd();
         chdir($this->contentDir);
         
-        // Create and checkout new branch
+        // First, ensure we're on main and pull latest changes to prevent conflicts
+        exec('git checkout main 2>&1', $output, $return);
+        exec('git pull origin main 2>&1', $output, $return);
+        
+        // Create and checkout new branch from updated main
         exec('git checkout -b ' . escapeshellarg($branchName) . ' 2>&1', $output, $return);
         
         chdir($oldDir);

@@ -171,16 +171,20 @@ class ReportErrorButton {
         }
         
         $query->the_post();
-        $post = get_post();
+        $post = $query->post; // Use query post object for file-based posts
         
         // Get the raw markdown content if it's a file-based post
         $contentFile = $this->getContentFilePath($post);
         
+        error_log('ReportError - Post: ' . $post->post_title . ', File path: ' . ($contentFile ? $contentFile : 'NOT FOUND'));
+        
         if ($contentFile && file_exists($contentFile)) {
             $content = file_get_contents($contentFile);
+            error_log('ReportError - Loading from FILE: ' . $contentFile);
         } else {
             // Fallback to post content
             $content = $post->post_content;
+            error_log('ReportError - Loading from DATABASE (file not found)');
         }
         
         // Restore original query
@@ -236,6 +240,24 @@ class ReportErrorButton {
             $files = glob($contentDir . '/' . $postType . '/*' . $slug . '.md');
             if (!empty($files)) {
                 return $files[0];
+            }
+        }
+        
+        // Try recursive search in subdirectories (e.g., a/amazing-grace.md)
+        if (is_dir($contentDir . '/' . $postType)) {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($contentDir . '/' . $postType, \RecursiveDirectoryIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::SELF_FIRST
+            );
+            
+            foreach ($iterator as $file) {
+                if ($file->isFile() && $file->getExtension() === 'md') {
+                    $filename = $file->getBasename('.md');
+                    // Check if filename matches slug (with or without date prefix)
+                    if ($filename === $slug || preg_match('/\d{4}-\d{2}-\d{2}-' . preg_quote($slug, '/') . '$/', $filename)) {
+                        return $file->getPathname();
+                    }
+                }
             }
         }
         

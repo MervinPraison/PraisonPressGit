@@ -148,7 +148,7 @@ class GitManager {
     }
     
     /**
-     * Rollback a file to specific commit
+     * Rollback a file or entire repo to specific commit
      */
     public function rollback($file, $hash) {
         if (!$this->gitAvailable) {
@@ -157,6 +157,13 @@ class GitManager {
         
         $oldDir = getcwd();
         chdir($this->contentDir);
+        
+        // If file is null, rollback entire repository
+        if ($file === null || empty($file)) {
+            exec('git reset --hard ' . escapeshellarg($hash) . ' 2>&1', $output, $return);
+            chdir($oldDir);
+            return $return === 0;
+        }
         
         $relativePath = str_replace($this->contentDir . '/', '', $file);
         

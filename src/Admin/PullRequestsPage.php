@@ -80,8 +80,14 @@ class PullRequestsPage {
      * Render PR list
      */
     private function renderPRList() {
+        // Get current state filter
+        $state = isset($_GET['state']) ? sanitize_text_field($_GET['state']) : 'open';
+        if (!in_array($state, ['open', 'closed', 'all'])) {
+            $state = 'open';
+        }
+        
         // Get pull requests
-        $prs = $this->getPullRequests();
+        $prs = $this->getPullRequests($state);
         
         // Debug: Show raw response
         if (isset($_GET['debug']) && $_GET['debug'] === '1') {
@@ -94,6 +100,19 @@ class PullRequestsPage {
         ?>
         <div class="wrap">
             <h1>Pull Requests</h1>
+            
+            <!-- State Filter Tabs -->
+            <h2 class="nav-tab-wrapper">
+                <a href="?page=praisonpress-pull-requests&state=open" class="nav-tab <?php echo $state === 'open' ? 'nav-tab-active' : ''; ?>">
+                    Open
+                </a>
+                <a href="?page=praisonpress-pull-requests&state=closed" class="nav-tab <?php echo $state === 'closed' ? 'nav-tab-active' : ''; ?>">
+                    Closed
+                </a>
+                <a href="?page=praisonpress-pull-requests&state=all" class="nav-tab <?php echo $state === 'all' ? 'nav-tab-active' : ''; ?>">
+                    All
+                </a>
+            </h2>
             
             <?php if (empty($this->repoOwner) || empty($this->repoName)): ?>
                 <div class="notice notice-error">
@@ -118,7 +137,7 @@ class PullRequestsPage {
             
             <?php if (empty($prs) || !is_array($prs)): ?>
                 <div class="notice notice-info">
-                    <p>No open pull requests.</p>
+                    <p>No <?php echo esc_html($state); ?> pull requests.</p>
                 </div>
                 <?php return; ?>
             <?php endif; ?>
@@ -143,6 +162,18 @@ class PullRequestsPage {
                         $prAuthor = isset($pr['user']['login']) ? $pr['user']['login'] : 'Unknown';
                         $prMergeable = isset($pr['mergeable']) ? $pr['mergeable'] : null;
                         $prCreated = isset($pr['created_at']) ? $pr['created_at'] : '';
+                        
+                        // Determine status badge
+                        $prState = isset($pr['state']) ? $pr['state'] : 'open';
+                        $merged = isset($pr['merged']) && $pr['merged'];
+                        
+                        if ($merged) {
+                            $statusBadge = '<span style="background: #8250df; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">✓ Merged</span>';
+                        } elseif ($prState === 'closed') {
+                            $statusBadge = '<span style="background: #d73a49; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">✗ Closed</span>';
+                        } else {
+                            $statusBadge = '<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">● Open</span>';
+                        }
                         ?>
                         <tr>
                             <td><strong>#<?php echo esc_html($prNumber); ?></strong></td>
@@ -293,27 +324,46 @@ class PullRequestsPage {
                 ?>
                     <p>Error loading files: <?php echo esc_html($files['error']); ?></p>
                 <?php else: ?>
-                    <table class="wp-list-table widefat fixed striped">
-                        <thead>
-                            <tr>
-                                <th>File</th>
-                                <th style="width: 100px;">Changes</th>
-                                <th style="width: 100px;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($files as $file): ?>
-                                <tr>
-                                    <td><code><?php echo esc_html($file['filename']); ?></code></td>
-                                    <td>
-                                        <span style="color: #00a32a;">+<?php echo esc_html($file['additions']); ?></span>
-                                        <span style="color: #d63638;">-<?php echo esc_html($file['deletions']); ?></span>
-                                    </td>
-                                    <td><?php echo esc_html($file['status']); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                    <?php foreach ($files as $file): ?>
+                        <div class="praisonpress-file-diff" style="margin-bottom: 30px; border: 1px solid #ddd; border-radius: 4px;">
+                            <div class="file-header" style="background: #f6f8fa; padding: 10px 15px; border-bottom: 1px solid #ddd;">
+                                <strong><?php echo esc_html($file['filename']); ?></strong>
+                                <span style="margin-left: 15px; color: #00a32a;">+<?php echo esc_html($file['additions']); ?></span>
+                                <span style="color: #d63638;">-<?php echo esc_html($file['deletions']); ?></span>
+                                <span style="margin-left: 15px; color: #666;"><?php echo esc_html($file['status']); ?></span>
+                            </div>
+                            <?php if (isset($file['patch'])): ?>
+                                <div class="file-diff" style="background: #fff; font-family: 'Courier New', monospace; font-size: 12px; overflow-x: auto;">
+                                    <?php
+                                    $lines = explode("\n", $file['patch']);
+                                    foreach ($lines as $line):
+                                        $lineStyle = '';
+                                        $lineClass = '';
+                                        
+                                        if (strpos($line, '+') === 0 && strpos($line, '+++') !== 0) {
+                                            $lineStyle = 'background: #e6ffed; color: #24292f;';
+                                            $lineClass = 'diff-add';
+                                        } elseif (strpos($line, '-') === 0 && strpos($line, '---') !== 0) {
+                                            $lineStyle = 'background: #ffebe9; color: #24292f;';
+                                            $lineClass = 'diff-remove';
+                                        } elseif (strpos($line, '@@') === 0) {
+                                            $lineStyle = 'background: #f0f8ff; color: #0969da;';
+                                            $lineClass = 'diff-header';
+                                        } else {
+                                            $lineStyle = 'background: #fff; color: #24292f;';
+                                            $lineClass = 'diff-context';
+                                        }
+                                    ?>
+                                        <div class="<?php echo esc_attr($lineClass); ?>" style="<?php echo esc_attr($lineStyle); ?> padding: 2px 10px; border-left: 3px solid transparent;"><?php echo esc_html($line); ?></div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <div style="padding: 15px; color: #666; font-style: italic;">
+                                    No diff available for this file.
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
                 <?php endif; ?>
             </div>
         </div>
@@ -482,12 +532,12 @@ class PullRequestsPage {
     /**
      * Get pull requests
      */
-    private function getPullRequests() {
+    private function getPullRequests($state = 'open') {
         if (empty($this->repoOwner) || empty($this->repoName)) {
             return ['error' => 'Repository not configured'];
         }
         
-        $endpoint = '/repos/' . $this->repoOwner . '/' . $this->repoName . '/pulls';
+        $endpoint = '/repos/' . $this->repoOwner . '/' . $this->repoName . '/pulls?state=' . $state;
         $response = $this->githubClient->get($endpoint);
         
         // Debug: Log the response
@@ -569,21 +619,13 @@ class PullRequestsPage {
             'merge_method' => 'merge',
         ]);
         
-        if (isset($result['merged']) && $result['merged']) {
-            // Sync content after merge
-            require_once PRAISON_PLUGIN_DIR . '/src/GitHub/SyncManager.php';
-            require_once PRAISON_PLUGIN_DIR . '/src/Git/GitManager.php';
-            
-            $config_file = PRAISON_PLUGIN_DIR . '/site-config.ini';
-            if (file_exists($config_file)) {
-                $config = parse_ini_file($config_file, true);
-                $repoUrl = isset($config['github']['repository_url']) ? $config['github']['repository_url'] : '';
-                $mainBranch = isset($config['github']['main_branch']) ? $config['github']['main_branch'] : 'main';
-                
-                $syncManager = new \PraisonPress\GitHub\SyncManager($repoUrl, $mainBranch);
-                $syncManager->setupRemote();
-                $syncManager->pullFromRemote();
-            }
+        // Check if merge was successful (GitHub API returns 'merged' key)
+        $merged = (isset($result['success']) && $result['success'] && isset($result['data']['merged']) && $result['data']['merged'])
+                  || (isset($result['merged']) && $result['merged']);
+        
+        if ($merged) {
+            // Auto-sync after successful merge
+            $this->triggerAutoSync();
             
             wp_redirect(add_query_arg([
                 'page' => 'praisonpress-pull-requests',
@@ -616,19 +658,56 @@ class PullRequestsPage {
             'state' => 'closed',
         ]);
         
-        if (isset($result['state']) && $result['state'] === 'closed') {
+        if (isset($result['success']) && $result['success']) {
+            // Auto-sync after successful close
+            $this->triggerAutoSync();
+            
+            wp_send_json_success([
+                'message' => 'Pull request closed successfully! Content synced from GitHub.',
+                'redirect' => admin_url('admin.php?page=praisonpress-pull-requests')
+            ]);
+        } else {
             wp_redirect(add_query_arg([
                 'page' => 'praisonpress-pull-requests',
-                'closed' => '1',
+                'pr' => $prNumber,
+                'error' => 'close_failed',
             ], admin_url('admin.php')));
             exit;
         }
+    }
+    
+    /**
+     * Trigger auto-sync after PR merge
+     */
+    private function triggerAutoSync() {
+        try {
+            // Load SyncManager
+            require_once PRAISON_PLUGIN_DIR . '/src/GitHub/SyncManager.php';
+            require_once PRAISON_PLUGIN_DIR . '/src/Git/GitManager.php';
+            
+            $config_file = PRAISON_PLUGIN_DIR . '/site-config.ini';
+            if (file_exists($config_file)) {
+                $config = parse_ini_file($config_file, true);
+                $repoUrl = isset($config['github']['repository_url']) ? $config['github']['repository_url'] : '';
+                $mainBranch = isset($config['github']['main_branch']) ? $config['github']['main_branch'] : 'main';
+                
+                if ($repoUrl) {
+                    $syncManager = new \PraisonPress\GitHub\SyncManager($repoUrl, $mainBranch);
+                    $syncManager->setupRemote();
+                    $result = $syncManager->pullFromRemote();
+                    
+                    if ($result) {
+                        error_log('PraisonPress: Auto-sync successful after PR merge');
+                        return true;
+                    } else {
+                        error_log('PraisonPress: Auto-sync failed');
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            error_log('PraisonPress: Auto-sync exception: ' . $e->getMessage());
+        }
         
-        wp_redirect(add_query_arg([
-            'page' => 'praisonpress-pull-requests',
-            'pr' => $prNumber,
-            'error' => 'close_failed',
-        ], admin_url('admin.php')));
-        exit;
+        return false;
     }
 }
