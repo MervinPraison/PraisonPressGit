@@ -124,6 +124,56 @@ class SubmissionsTable {
     }
     
     /**
+     * Get all submissions (for admin view)
+     * 
+     * @param string $status Filter by status (optional)
+     * @param int $limit Limit number of results
+     * @param int $offset Offset for pagination
+     * @return array Array of submission objects
+     */
+    public function getAllSubmissions($status = null, $limit = 50, $offset = 0) {
+        global $wpdb;
+        
+        $sql = "SELECT * FROM {$this->tableName}";
+        $params = array();
+        
+        if ($status) {
+            $sql .= " WHERE status = %s";
+            $params[] = $status;
+        }
+        
+        $sql .= " ORDER BY created_at DESC LIMIT %d OFFSET %d";
+        $params[] = $limit;
+        $params[] = $offset;
+        
+        return $wpdb->get_results($wpdb->prepare($sql, $params));
+    }
+    
+    /**
+     * Get total count of all submissions (for admin view)
+     * 
+     * @param string $status Filter by status (optional)
+     * @return int Total count
+     */
+    public function getAllSubmissionsCount($status = null) {
+        global $wpdb;
+        
+        $sql = "SELECT COUNT(*) FROM {$this->tableName}";
+        $params = array();
+        
+        if ($status) {
+            $sql .= " WHERE status = %s";
+            $params[] = $status;
+        }
+        
+        if (!empty($params)) {
+            return (int) $wpdb->get_var($wpdb->prepare($sql, $params));
+        }
+        
+        return (int) $wpdb->get_var($sql);
+    }
+    
+    /**
      * Update submission status
      * 
      * @param int $prNumber GitHub PR number

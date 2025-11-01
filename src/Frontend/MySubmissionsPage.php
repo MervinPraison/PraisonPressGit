@@ -24,12 +24,15 @@ class MySubmissionsPage {
         // Add shortcode for the page
         add_shortcode('praisonpress_my_submissions', [$this, 'renderPage']);
         
-        // Enqueue styles
+        // Enqueue styles and scripts
         add_action('wp_enqueue_scripts', [$this, 'enqueueAssets']);
+        
+        // AJAX handler for merging PRs from frontend
+        add_action('wp_ajax_praison_merge_pr_frontend', [$this, 'ajaxMergePR']);
     }
     
     /**
-     * Enqueue CSS
+     * Enqueue CSS and JS
      */
     public function enqueueAssets() {
         // Only enqueue on pages with the shortcode
@@ -41,6 +44,19 @@ class MySubmissionsPage {
                 [],
                 '1.0.0'
             );
+            
+            wp_enqueue_script(
+                'praisonpress-submissions',
+                PRAISON_PLUGIN_URL . 'assets/js/submissions.js',
+                ['jquery'],
+                '1.0.0',
+                true
+            );
+            
+            wp_localize_script('praisonpress-submissions', 'praisonSubmissions', [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('praison_merge_pr_nonce')
+            ]);
         }
     }
     
@@ -58,15 +74,29 @@ class MySubmissionsPage {
         $currentUser = wp_get_current_user();
         $userId = $currentUser->ID;
         $userName = $currentUser->display_name;
+        $isAdmin = current_user_can('manage_options');
+        
+        // Allow admins to view all submissions or filter by user
+        $viewUserId = $userId; // Default to current user
+        if ($isAdmin && isset($_GET['user_id']) && !empty($_GET['user_id'])) {
+            $viewUserId = intval($_GET['user_id']);
+            $viewUser = get_user_by('id', $viewUserId);
+            if ($viewUser) {
+                $userName = $viewUser->display_name;
+            }
+        } elseif ($isAdmin && isset($_GET['view']) && $_GET['view'] === 'all') {
+            $viewUserId = null; // View all users
+            $userName = 'All Users';
+        }
         
         // Check cache first (5 minute cache)
-        $cacheKey = 'praisonpress_user_submissions_' . $userId;
+        $cacheKey = 'praisonpress_user_submissions_' . ($viewUserId ?: 'all');
         $userPRs = wp_cache_get($cacheKey, 'praisonpress');
         
         if ($userPRs !== false) {
             // Return cached data
             ob_start();
-            $this->renderSubmissions($userPRs, $userName);
+            $this->renderSubmissions($userPRs, $userName, $isAdmin, $viewUserId);
             return ob_get_clean();
         }
         
@@ -78,8 +108,16 @@ class MySubmissionsPage {
         // Get user's submissions from database with pagination
         require_once PRAISON_PLUGIN_DIR . '/src/Database/SubmissionsTable.php';
         $submissionsTable = new \PraisonPress\Database\SubmissionsTable();
-        $totalSubmissions = $submissionsTable->getUserSubmissionsCount($userId);
-        $userSubmissions = $submissionsTable->getUserSubmissions($userId, null, $per_page, $offset);
+        
+        if ($viewUserId === null) {
+            // Admin viewing all submissions
+            $totalSubmissions = $submissionsTable->getAllSubmissionsCount();
+            $userSubmissions = $submissionsTable->getAllSubmissions(null, $per_page, $offset);
+        } else {
+            // Viewing specific user's submissions
+            $totalSubmissions = $submissionsTable->getUserSubmissionsCount($viewUserId);
+            $userSubmissions = $submissionsTable->getUserSubmissions($viewUserId, null, $per_page, $offset);
+        }
         $totalPages = ceil($totalSubmissions / $per_page);
         
         // Get PR details from GitHub for each submission
@@ -109,6 +147,7 @@ class MySubmissionsPage {
                         // Add database info to PR data
                         $prDetails['db_id'] = $submission->id;
                         $prDetails['db_post_title'] = $submission->post_title;
+                        $prDetails['db_post_type'] = $submission->post_type;
                         $prDetails['db_created_at'] = $submission->created_at;
                         $userPRs[] = $prDetails;
                     } else {
@@ -122,7 +161,9 @@ class MySubmissionsPage {
                             'user' => array('login' => $userName),
                             'body' => '',
                             'merged_at' => null,
-                            'db_only' => true
+                            'db_only' => true,
+                            'db_post_title' => $submission->post_title,
+                            'db_post_type' => $submission->post_type
                         );
                     }
                 }
@@ -133,7 +174,7 @@ class MySubmissionsPage {
         wp_cache_set($cacheKey, $userPRs, 'praisonpress', 300);
         
         ob_start();
-        $this->renderSubmissions($userPRs, $userName);
+        $this->renderSubmissions($userPRs, $userName, $isAdmin, $viewUserId);
         return ob_get_clean();
     }
     
@@ -144,8 +185,19 @@ class MySubmissionsPage {
         ?>
         <div class="praisonpress-my-submissions">
             <div class="praisonpress-submissions-header">
-                <h2>My Submissions</h2>
-                <p>Track the status of your content edit suggestions</p>
+                <h2><?php echo $viewUserId === null ? 'All Submissions' : ($viewUserId === get_current_user_id() ? 'My Submissions' : esc_html($userName) . "'s Submissions"); ?></h2>
+                <p>Track the status of content edit suggestions</p>
+                
+                <?php if ($isAdmin): ?>
+                    <div class="praisonpress-admin-filters">
+                        <a href="<?php echo esc_url(remove_query_arg(['view', 'user_id', 'paged'])); ?>" class="filter-btn <?php echo $viewUserId === get_current_user_id() ? 'active' : ''; ?>">
+                            My Submissions
+                        </a>
+                        <a href="<?php echo esc_url(add_query_arg('view', 'all', remove_query_arg(['user_id', 'paged']))); ?>" class="filter-btn <?php echo $viewUserId === null ? 'active' : ''; ?>">
+                            All Users
+                        </a>
+                    </div>
+                <?php endif; ?>
             </div>
             
             <?php if (empty($userPRs)): ?>
@@ -212,13 +264,28 @@ class MySubmissionsPage {
                                 
                                 <?php if (!empty($pr['db_post_title'])): ?>
                                     <?php 
-                                    // Try to find the post by title
+                                    // Get post type from database (important for file-based posts)
+                                    $post_type = !empty($pr['db_post_type']) ? $pr['db_post_type'] : 'any';
+                                    $slug = sanitize_title($pr['db_post_title']);
+                                    
+                                    // For file-based posts, search by slug with specific post type
                                     $post_query = new \WP_Query([
-                                        'title' => $pr['db_post_title'],
-                                        'post_type' => 'any',
+                                        'name' => $slug,
+                                        'post_type' => $post_type,
                                         'posts_per_page' => 1,
                                         'post_status' => 'any'
                                     ]);
+                                    
+                                    // If not found and post_type was specific, try with 'any'
+                                    if (!$post_query->have_posts() && $post_type !== 'any') {
+                                        $post_query = new \WP_Query([
+                                            'name' => $slug,
+                                            'post_type' => 'any',
+                                            'posts_per_page' => 1,
+                                            'post_status' => 'any'
+                                        ]);
+                                    }
+                                    
                                     if ($post_query->have_posts()): 
                                         $post_query->the_post();
                                         $page_url = get_permalink();
@@ -231,6 +298,11 @@ class MySubmissionsPage {
                                 <?php endif; ?>
                                 
                                 <?php if (current_user_can('manage_options')): ?>
+                                    <?php if ($prState === 'open' && empty($pr['merged_at'])): ?>
+                                        <button type="button" class="submission-action-btn approve-pr" data-pr-number="<?php echo esc_attr($prNumber); ?>" data-pr-title="<?php echo esc_attr($prTitle); ?>">
+                                            <span class="dashicons dashicons-yes-alt"></span> Approve & Merge
+                                        </button>
+                                    <?php endif; ?>
                                     <a href="<?php echo esc_url(admin_url('admin.php?page=praisonpress-pull-requests&pr=' . $prNumber)); ?>" class="submission-action-btn admin-review">
                                         <span class="dashicons dashicons-admin-tools"></span> Review in Admin
                                     </a>
@@ -242,5 +314,77 @@ class MySubmissionsPage {
             <?php endif; ?>
         </div>
         <?php
+    }
+    
+    /**
+     * AJAX handler for merging PR from frontend
+     */
+    public function ajaxMergePR() {
+        // Verify nonce
+        check_ajax_referer('praison_merge_pr_nonce', 'nonce');
+        
+        // Check permissions
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Permission denied']);
+        }
+        
+        $prNumber = isset($_POST['pr_number']) ? intval($_POST['pr_number']) : 0;
+        
+        if (!$prNumber) {
+            wp_send_json_error(['message' => 'Invalid PR number']);
+        }
+        
+        // Load required classes
+        require_once PRAISON_PLUGIN_DIR . '/src/GitHub/PullRequestManager.php';
+        require_once PRAISON_PLUGIN_DIR . '/src/GitHub/SyncManager.php';
+        
+        // Get repo info from config
+        $config_file = PRAISON_PLUGIN_DIR . '/site-config.ini';
+        if (!file_exists($config_file)) {
+            wp_send_json_error(['message' => 'Configuration file not found']);
+        }
+        
+        $config = parse_ini_file($config_file, true);
+        $repoUrl = isset($config['github']['repository_url']) ? $config['github']['repository_url'] : '';
+        $mainBranch = isset($config['github']['main_branch']) ? $config['github']['main_branch'] : 'main';
+        
+        if (empty($repoUrl)) {
+            wp_send_json_error(['message' => 'Repository URL not configured']);
+        }
+        
+        // Parse repo URL
+        if (!preg_match('#github\.com[:/]([^/]+)/([^/\.]+)#', $repoUrl, $matches)) {
+            wp_send_json_error(['message' => 'Invalid repository URL']);
+        }
+        
+        $owner = $matches[1];
+        $repo = $matches[2];
+        
+        // Initialize GitHub client
+        require_once PRAISON_PLUGIN_DIR . '/src/GitHub/GitHubClient.php';
+        $accessToken = get_option('praisonpress_github_token', '');
+        $githubClient = new \PraisonPress\GitHub\GitHubClient($accessToken);
+        
+        // Merge the PR via GitHub API
+        $result = $githubClient->mergePullRequest($owner, $repo, $prNumber);
+        
+        if ($result['success']) {
+            // Sync content after merge
+            $syncManager = new \PraisonPress\GitHub\SyncManager($repoUrl, $mainBranch);
+            $syncManager->pullFromRemote();
+            
+            // Clear cache
+            require_once PRAISON_PLUGIN_DIR . '/src/Cache/CacheManager.php';
+            $cacheManager = new \PraisonPress\Cache\CacheManager();
+            $cacheManager->clearAll();
+            
+            wp_send_json_success([
+                'message' => sprintf('Pull request #%d has been successfully merged and content has been synced!', $prNumber)
+            ]);
+        } else {
+            wp_send_json_error([
+                'message' => $result['message'] ?? 'Failed to merge pull request'
+            ]);
+        }
     }
 }

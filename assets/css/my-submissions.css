@@ -230,3 +230,140 @@
     background: #d63638;
     color: white;
 }
+
+/* Admin Filters */
+.praisonpress-admin-filters {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.praisonpress-admin-filters .filter-btn {
+    padding: 8px 16px;
+    background: #f0f0f0;
+    color: #2c3338;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.praisonpress-admin-filters .filter-btn:hover {
+    background: #e0e0e0;
+}
+
+.praisonpress-admin-filters .filter-btn.active {
+    background: #2271b1;
+    color: white;
+    border-color: #135e96;
+}
+
+/* Approve Button */
+.submission-action-btn.approve-pr {
+    background: #e7f7ed;
+    border-color: #46b450;
+    color: #46b450;
+    font-weight: 600;
+}
+
+.submission-action-btn.approve-pr:hover:not(:disabled) {
+    background: #46b450;
+    color: white;
+}
+
+.submission-action-btn.approve-pr:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.submission-action-btn.approve-pr .dashicons-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Modal Styles */
+.praison-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+}
+
+.praison-modal {
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: auto;
+}
+
+.praison-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0073aa;
+    color: white;
+}
+
+.praison-modal-header.success-header {
+    background: #46b450;
+}
+
+.praison-modal-header.error-header {
+    background: #dc3232;
+}
+
+.praison-modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: white;
+}
+
+.praison-modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+}
+
+.praison-modal-close:hover {
+    opacity: 0.8;
+}
+
+.praison-modal-body {
+    padding: 20px;
+}
+
+.praison-modal-body p {
+    margin: 0;
+    line-height: 1.6;
+}
+
+.praison-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #ddd;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
