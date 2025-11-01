@@ -133,14 +133,13 @@
                                 '<p style="margin-top: 15px; font-size: 14px; color: #666;">An admin will review your changes soon.</p>' +
                                 '</div>';
                             
-                            $('.praisonpress-modal-body').html(successHtml);
+                            $('.praisonpress-modal-body').html(successHtml + '<p style="margin-top: 15px; color: #666; font-style: italic;">Redirecting to Submissions page in 2 seconds...</p>');
                             $('.praisonpress-modal-footer').hide();
                             
-                            // Auto-close after 10 seconds
+                            // Redirect to Submissions page after 2 seconds
                             setTimeout(function() {
-                                closeModal();
-                                location.reload(); // Refresh to show updated content
-                            }, 10000);
+                                window.location.href = '/submissions/';
+                            }, 2000);
                         } else {
                             showErrorModal('Success', message);
                             setTimeout(function() {

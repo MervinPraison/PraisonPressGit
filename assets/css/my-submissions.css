@@ -1,0 +1,161 @@
+/* My Submissions Page Styles */
+
+.praisonpress-my-submissions {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.praisonpress-submissions-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e5e5e5;
+}
+
+.praisonpress-submissions-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 28px;
+    color: #2c3338;
+}
+
+.praisonpress-submissions-header p {
+    margin: 0;
+    color: #646970;
+    font-size: 16px;
+}
+
+/* Notice Styles */
+.praisonpress-notice {
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-left: 4px solid #0073aa;
+    background: #f0f6fc;
+    border-radius: 4px;
+}
+
+.praisonpress-notice-error {
+    border-left-color: #d63638;
+    background: #fcf0f1;
+}
+
+.praisonpress-notice-info {
+    border-left-color: #0073aa;
+    background: #f0f6fc;
+}
+
+.praisonpress-notice p {
+    margin: 5px 0;
+    color: #2c3338;
+}
+
+/* Submissions List */
+.praisonpress-submissions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.praisonpress-submission-item {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    padding: 20px;
+    transition: box-shadow 0.2s ease;
+}
+
+.praisonpress-submission-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.submission-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    gap: 15px;
+}
+
+.submission-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    flex: 1;
+}
+
+.submission-title a {
+    color: #2c3338;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.submission-title a:hover {
+    color: #0073aa;
+}
+
+.submission-status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-open {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-merged {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-closed {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.submission-meta {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #646970;
+}
+
+.submission-number {
+    font-weight: 600;
+    color: #0073aa;
+}
+
+.submission-description {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f1;
+    color: #646970;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .praisonpress-my-submissions {
+        margin: 20px auto;
+        padding: 0 15px;
+    }
+    
+    .praisonpress-submissions-header h2 {
+        font-size: 24px;
+    }
+    
+    .submission-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .submission-meta {
+        flex-direction: column;
+        gap: 5px;
+    }
+}

@@ -140,6 +140,16 @@ class GitHubClient {
     }
     
     /**
+     * Get a single pull request
+     * @param string $owner Repository owner
+     * @param string $repo Repository name
+     * @param int $prNumber Pull request number
+     */
+    public function getPullRequest($owner, $repo, $prNumber) {
+        return $this->request("/repos/{$owner}/{$repo}/pulls/{$prNumber}");
+    }
+    
+    /**
      * Create pull request
      * @param string $owner Repository owner
      * @param string $repo Repository name

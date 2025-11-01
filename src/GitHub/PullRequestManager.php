@@ -369,4 +369,22 @@ class PullRequestManager {
         
         return false;
     }
+    
+    /**
+     * Save submission to database for user tracking
+     * 
+     * @param int $prNumber GitHub PR number
+     * @param string $prUrl GitHub PR URL
+     * @param int $postId Related post ID
+     * @param string $postTitle Post title
+     */
+    private function saveSubmissionToDatabase($prNumber, $prUrl, $postId = null, $postTitle = null) {
+        require_once PRAISON_PLUGIN_DIR . '/src/Database/SubmissionsTable.php';
+        $submissionsTable = new \PraisonPress\Database\SubmissionsTable();
+        
+        $userId = get_current_user_id();
+        if ($userId) {
+            $submissionsTable->saveSubmission($userId, $prNumber, $prUrl, $postId, $postTitle);
+        }
+    }
 }

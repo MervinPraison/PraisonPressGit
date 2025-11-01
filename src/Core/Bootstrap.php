@@ -71,6 +71,13 @@ class Bootstrap {
             $reportButton->register();
         }
         
+        // Register My Submissions Page
+        if (file_exists(PRAISON_PLUGIN_DIR . '/src/Frontend/MySubmissionsPage.php')) {
+            require_once PRAISON_PLUGIN_DIR . '/src/Frontend/MySubmissionsPage.php';
+            $mySubmissionsPage = new \PraisonPress\Frontend\MySubmissionsPage();
+            $mySubmissionsPage->register();
+        }
+        
         // Register Pull Requests page
         if (file_exists(PRAISON_PLUGIN_DIR . '/src/Admin/PullRequestsPage.php')) {
             require_once PRAISON_PLUGIN_DIR . '/src/Admin/PullRequestsPage.php';

@@ -48,6 +48,35 @@ add_action('plugins_loaded', function() {
     }
 }, 1);
 
+/**
+ * Plugin activation hook
+ * Auto-create the Submissions page and database table
+ */
+function praisonpress_activate() {
+    // Create submissions tracking table
+    require_once PRAISON_PLUGIN_DIR . '/src/Database/SubmissionsTable.php';
+    $submissionsTable = new \PraisonPress\Database\SubmissionsTable();
+    $submissionsTable->createTable();
+    
+    // Check if Submissions page already exists
+    $existing_page = get_page_by_path('submissions');
+    
+    if (!$existing_page) {
+        // Create the Submissions page
+        $page_data = array(
+            'post_title'    => 'Submissions',
+            'post_content'  => '[praisonpress_my_submissions]',
+            'post_status'   => 'publish',
+            'post_type'     => 'page',
+            'post_author'   => 1,
+            'post_name'     => 'submissions'
+        );
+        
+        wp_insert_post($page_data);
+    }
+}
+register_activation_hook(__FILE__, 'praisonpress_activate');
+
 // Installation - create directories
 register_activation_hook(__FILE__, 'praison_install');
 

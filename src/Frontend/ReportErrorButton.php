@@ -66,15 +66,15 @@ class ReportErrorButton {
      * Render the Report Error button
      */
     public function renderButton() {
+        // Only show to logged-in users
+        if (!is_user_logged_in()) {
+            return;
+        }
+        
         // Only on singular posts/pages
         if (!is_singular()) {
             return;
         }
-        
-        // Check if user is logged in (optional - you can remove this to allow anonymous reports)
-        // if (!is_user_logged_in()) {
-        //     return;
-        // }
         
         ?>
         <div id="praisonpress-report-error-button" class="praisonpress-floating-button">
