@@ -487,6 +487,25 @@ status: "publish"
             <!-- GitHub Integration -->
             <div class="card" style="max-width: 800px; margin-top: 20px;">
                 <h2>🐙 GitHub Integration</h2>
+                
+                <?php
+                // Check if Git is installed
+                exec('git --version 2>&1', $gitVersionOutput, $gitVersionReturn);
+                $gitInstalled = ($gitVersionReturn === 0);
+                $gitVersion = $gitInstalled ? $gitVersionOutput[0] : 'Not installed';
+                ?>
+                
+                <div class="notice notice-<?php echo $gitInstalled ? 'success' : 'error'; ?>">
+                    <p>
+                        <strong>Git Status:</strong> 
+                        <?php if ($gitInstalled): ?>
+                            ✅ Installed (<?php echo esc_html($gitVersion); ?>)
+                        <?php else: ?>
+                            ❌ Not installed. Please install Git on your server.
+                        <?php endif; ?>
+                    </p>
+                </div>
+                
                 <?php
                 require_once PRAISON_PLUGIN_DIR . '/src/GitHub/OAuthHandler.php';
                 require_once PRAISON_PLUGIN_DIR . '/src/GitHub/GitHubClient.php';
@@ -499,6 +518,11 @@ status: "publish"
                 $clientSecret = isset($config['github']['client_secret']) ? $config['github']['client_secret'] : null;
                 
                 $oauth = new \PraisonPress\GitHub\OAuthHandler($clientId, $clientSecret);
+                
+                // Get repository URL and connection status early
+                $isConnected = $oauth->isConnected();
+                $hasConfig = !empty($config['github']['client_id']) && !empty($config['github']['client_secret']);
+                $repoUrl = isset($config['github']['repository_url']) ? $config['github']['repository_url'] : '';
                 
                 // Handle OAuth callback
                 if (isset($_GET['action']) && $_GET['action'] === 'github-callback' && isset($_GET['code'])) {
@@ -519,9 +543,40 @@ status: "publish"
                     echo '<div class="notice notice-success"><p>✅ Disconnected from GitHub.</p></div>';
                 }
                 
-                $isConnected = $oauth->isConnected();
-                $hasConfig = !empty($config['github']['client_id']) && !empty($config['github']['client_secret']);
-                $repoUrl = isset($config['github']['repository_url']) ? $config['github']['repository_url'] : '';
+                // Handle manual sync
+                if (isset($_GET['action']) && $_GET['action'] === 'github-sync' && check_admin_referer('github_sync')) {
+                    require_once PRAISON_PLUGIN_DIR . '/src/GitHub/SyncManager.php';
+                    require_once PRAISON_PLUGIN_DIR . '/src/Git/GitManager.php';
+                    
+                    $syncManager = new \PraisonPress\GitHub\SyncManager($repoUrl, isset($config['github']['main_branch']) ? $config['github']['main_branch'] : 'main');
+                    $syncManager->setupRemote();
+                    $result = $syncManager->pullFromRemote();
+                    
+                    if ($result['success']) {
+                        echo '<div class="notice notice-success"><p>✅ ' . esc_html($result['message']) . '</p></div>';
+                    } else {
+                        echo '<div class="notice notice-error"><p>❌ ' . esc_html($result['message']) . '</p></div>';
+                    }
+                }
+                
+                // Handle auto-clone
+                if (isset($_GET['action']) && $_GET['action'] === 'github-clone' && check_admin_referer('github_clone')) {
+                    require_once PRAISON_PLUGIN_DIR . '/src/GitHub/SyncManager.php';
+                    require_once PRAISON_PLUGIN_DIR . '/src/Git/GitManager.php';
+                    
+                    $syncManager = new \PraisonPress\GitHub\SyncManager($repoUrl, isset($config['github']['main_branch']) ? $config['github']['main_branch'] : 'main');
+                    $result = $syncManager->cloneRepository();
+                    
+                    if ($result['success']) {
+                        if (isset($result['already_exists']) && $result['already_exists']) {
+                            echo '<div class="notice notice-info"><p>ℹ️ ' . esc_html($result['message']) . '</p></div>';
+                        } else {
+                            echo '<div class="notice notice-success"><p>✅ ' . esc_html($result['message']) . '</p></div>';
+                        }
+                    } else {
+                        echo '<div class="notice notice-error"><p>❌ ' . esc_html($result['message']) . '</p></div>';
+                    }
+                }
                 ?>
                 
                 <?php if (!$hasConfig): ?>
@@ -578,7 +633,55 @@ repository_url = "https://github.com/MervinPraison/PraisonPressContent"</pre>
                         }
                         ?>
                     <?php endif; ?>
+                    
+                    <?php
+                    // Show sync status
+                    if (!empty($repoUrl)) {
+                        require_once PRAISON_PLUGIN_DIR . '/src/GitHub/SyncManager.php';
+                        require_once PRAISON_PLUGIN_DIR . '/src/Git/GitManager.php';
+                        
+                        $syncManager = new \PraisonPress\GitHub\SyncManager($repoUrl, isset($config['github']['main_branch']) ? $config['github']['main_branch'] : 'main');
+                        $syncManager->setupRemote();
+                        $syncStatus = $syncManager->getSyncStatus();
+                        
+                        if ($syncStatus['configured'] && $syncStatus['connected']) {
+                            echo '<hr style="margin: 20px 0;">';
+                            echo '<h3>Sync Status</h3>';
+                            
+                            if ($syncStatus['up_to_date']) {
+                                echo '<p style="color: #00a32a;">✅ Up to date with remote</p>';
+                            } else {
+                                if ($syncStatus['incoming_changes'] > 0) {
+                                    echo '<p style="color: #d63638;">⚠️ ' . esc_html($syncStatus['incoming_changes']) . ' incoming change(s) from remote</p>';
+                                }
+                                if ($syncStatus['outgoing_changes'] > 0) {
+                                    echo '<p style="color: #d63638;">⚠️ ' . esc_html($syncStatus['outgoing_changes']) . ' outgoing change(s) to push</p>';
+                                }
+                            }
+                            
+                            echo '<p><small>Last sync: ' . esc_html($syncStatus['last_sync_date']) . '</small></p>';
+                            echo '<p><small>Webhook URL: <code>' . esc_url(rest_url('praisonpress/v1/webhook/github')) . '</code></small></p>';
+                        }
+                    }
+                    ?>
+                    
                     <p>
+                        <?php if (!empty($repoUrl)): ?>
+                            <?php
+                            // Check if content directory is a git repo
+                            $isGitRepo = is_dir(PRAISON_CONTENT_DIR . '/.git');
+                            ?>
+                            <?php if ($isGitRepo): ?>
+                                <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=praisonpress-settings&action=github-sync'), 'github_sync')); ?>" class="button button-primary">
+                                    🔄 Sync Now
+                                </a>
+                            <?php else: ?>
+                                <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=praisonpress-settings&action=github-clone'), 'github_clone')); ?>" class="button button-primary">
+                                    💾 Clone Repository
+                                </a>
+                                <p><small>ℹ️ Content directory is not a Git repository. Click to clone from GitHub.</small></p>
+                            <?php endif; ?>
+                        <?php endif; ?>
                         <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=praisonpress-settings&action=github-disconnect'), 'github_disconnect')); ?>" class="button">
                             🔌 Disconnect GitHub
                         </a>
