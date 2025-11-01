@@ -14,7 +14,7 @@ defined('ABSPATH') or die('Direct access not allowed');
 // Define constants
 define('PRAISON_VERSION', '1.0.0');
 define('PRAISON_PLUGIN_DIR', __DIR__);
-define('PRAISON_PLUGIN_URL', plugins_url('', __FILE__));
+define('PRAISON_PLUGIN_URL', trailingslashit(plugins_url('', __FILE__)));
 
 // Content directory - Hybrid approach for maximum flexibility:
 // 1. Can be overridden in wp-config.php: define('PRAISON_CONTENT_DIR', '/custom/path');

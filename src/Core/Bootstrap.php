@@ -57,6 +57,20 @@ class Bootstrap {
         // Version history submenu (priority 20 - appears after Export)
         add_action('admin_menu', [$this, 'addHistoryMenu'], 20);
         
+        // Register webhook endpoint
+        if (file_exists(PRAISON_PLUGIN_DIR . '/src/API/WebhookEndpoint.php')) {
+            require_once PRAISON_PLUGIN_DIR . '/src/API/WebhookEndpoint.php';
+            $webhook = new \PraisonPress\API\WebhookEndpoint();
+            $webhook->register();
+        }
+        
+        // Register Report Error button
+        if (file_exists(PRAISON_PLUGIN_DIR . '/src/Frontend/ReportErrorButton.php')) {
+            require_once PRAISON_PLUGIN_DIR . '/src/Frontend/ReportErrorButton.php';
+            $reportButton = new \PraisonPress\Frontend\ReportErrorButton();
+            $reportButton->register();
+        }
+        
         // Note: Export menu is added at priority 15 by ExportPage class
         
         // Admin bar items
