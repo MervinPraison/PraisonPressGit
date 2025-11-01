@@ -15,7 +15,10 @@ zip -r praisonpressgit-1.0.0.zip praisonpressgit/ \
   -x "*/vendor/*" \
   -x "*/.vscode/*" \
   -x "*/.idea/*" \
-  -x "*CREATE-WP-ORG-ZIP.sh"
+  -x "*CREATE-WP-ORG-ZIP.sh" \
+  -x "praisonpressgit/scripts/*" \
+  -x "praisonpressgit/Dockerfile.indexed" \
+  -x "praisonpressgit/README-INDEX.md"
 
 echo ""
 echo "✅ ZIP created: praisonpressgit-1.0.0.zip"
@@ -27,5 +30,8 @@ echo "  - .gitignore (hidden files not allowed)"
 echo "  - .DS_Store and other OS files"
 echo "  - node_modules, vendor"
 echo "  - IDE config files"
+echo "  - scripts/ (optional build tools - available on GitHub)"
+echo "  - Dockerfile.indexed (optional - for large datasets)"
+echo "  - README-INDEX.md (advanced documentation)"
 echo ""
 echo "Submit to: https://wordpress.org/plugins/developers/add/"

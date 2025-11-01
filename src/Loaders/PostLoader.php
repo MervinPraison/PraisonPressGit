@@ -82,6 +82,13 @@ class PostLoader {
             return [];
         }
         
+        // Check for index file (fast path for large directories)
+        $indexFile = $this->postsDir . '/_index.json';
+        if (file_exists($indexFile)) {
+            return $this->loadFromIndex($indexFile);
+        }
+        
+        // Fallback: Scan directory (slower for large directories)
         $files = glob($this->postsDir . '/*.md');
         
         if (empty($files)) {
@@ -100,6 +107,89 @@ class PostLoader {
             if ($post) {
                 $posts[] = $post;
             }
+        }
+        
+        return $posts;
+    }
+    
+    /**
+     * Load posts from pre-built index file (fast for large directories)
+     * 
+     * @param string $indexFile Path to index file
+     * @return array Array of WP_Post objects
+     */
+    private function loadFromIndex($indexFile) {
+        $indexData = json_decode(file_get_contents($indexFile), true);
+        
+        if (!is_array($indexData)) {
+            return [];
+        }
+        
+        $posts = [];
+        
+        foreach ($indexData as $entry) {
+            // Build full file path
+            $file = $this->postsDir . '/' . $entry['file'];
+            
+            if (!file_exists($file)) {
+                continue;
+            }
+            
+            // Read only the file content (front matter already parsed in index)
+            $content = file_get_contents($file);
+            
+            // Extract content after front matter
+            if (preg_match('/^---\s*\n.*?\n---\s*\n(.*)$/s', $content, $matches)) {
+                $markdownContent = $matches[1];
+            } else {
+                $markdownContent = $content;
+            }
+            
+            // Parse markdown to HTML
+            $htmlContent = $this->parser->parse($markdownContent);
+            
+            // Get author ID
+            $author_id = $this->getUserIdByLogin($entry['author'] ?? 'admin');
+            
+            // Create post data from index
+            $post_data = [
+                'ID' => abs(crc32($entry['slug'])),
+                'post_author' => $author_id,
+                'post_date' => $entry['date'],
+                'post_date_gmt' => $entry['date'],
+                'post_content' => $htmlContent,
+                'post_title' => $entry['title'],
+                'post_excerpt' => $entry['excerpt'] ?? '',
+                'post_status' => $entry['status'] ?? 'publish',
+                'comment_status' => 'open',
+                'ping_status' => 'open',
+                'post_password' => '',
+                'post_name' => $entry['slug'],
+                'to_ping' => '',
+                'pinged' => '',
+                'post_modified' => $entry['modified'] ?? current_time('mysql'),
+                'post_modified_gmt' => $entry['modified'] ?? current_time('mysql', 1),
+                'post_content_filtered' => '',
+                'post_parent' => 0,
+                'guid' => home_url('?praison_post=' . $entry['slug']),
+                'menu_order' => 0,
+                'post_type' => $this->postType === 'posts' ? 'praison_post' : $this->postType,
+                'post_mime_type' => '',
+                'comment_count' => 0,
+                'filter' => 'raw',
+            ];
+            
+            // Create WP_Post object
+            $post = new \WP_Post((object) $post_data);
+            
+            // Store additional metadata
+            $post->_praison_file = $file;
+            $post->_praison_categories = $entry['categories'] ?? [];
+            $post->_praison_tags = $entry['tags'] ?? [];
+            $post->_praison_featured_image = $entry['featured_image'] ?? '';
+            $post->_praison_custom_fields = $entry['custom'] ?? [];
+            
+            $posts[] = $post;
         }
         
         return $posts;
