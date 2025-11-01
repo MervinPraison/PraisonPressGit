@@ -153,10 +153,10 @@ When you install the plugin, it automatically:
 
 For advanced customization, you can create configuration files:
 
-### 1. Site Settings (`site-settings.ini`)
+### 1. Site Configuration (`site-config.ini`)
 
-**Location:** `/wp-content/plugins/praisonpressgit/site-settings.ini`
-**Example:** `/wp-content/plugins/praisonpressgit/site-settings.ini.example`
+**Location:** `/wp-content/plugins/praisonpressgit/site-config.ini`
+**Example:** `/wp-content/plugins/praisonpressgit/site-config.ini.example`
 
 ```ini
 [site]

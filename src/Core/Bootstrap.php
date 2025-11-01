@@ -468,11 +468,11 @@ status: "publish"
             <div class="card" style="max-width: 800px;">
                 <h2>⚙️ Configuration</h2>
                 <p>Edit your configuration file at:</p>
-                <p><code><?php echo esc_html(PRAISON_PLUGIN_DIR); ?>/site-settings.ini</code></p>
+                <p><code><?php echo esc_html(PRAISON_PLUGIN_DIR); ?>/site-config.ini</code></p>
                 
                 <h3>Current Settings</h3>
                 <?php
-                $config_file = PRAISON_PLUGIN_DIR . '/site-settings.ini';
+                $config_file = PRAISON_PLUGIN_DIR . '/site-config.ini';
                 if (file_exists($config_file)) {
                     $config = parse_ini_file($config_file, true);
                     echo '<pre style="background: #f5f5f5; padding: 10px;">';
