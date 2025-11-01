@@ -40,16 +40,29 @@
 
 ### 🤝 Collaborative Editing Features (NEW)
 
-- **✏️ Frontend "Report Error" Button**: Allow logged-in users to suggest edits on any post
-- **🔗 GitHub Integration**: One-click OAuth connection to GitHub repositories
+#### Frontend Features
+- **✏️ "Report Error" Button**: Allow logged-in users to suggest edits on any post
 - **📝 Pull Request Workflow**: Automatic PR creation for user-submitted edits
-- **👥 User Submissions Tracking**: Secure database-backed PR tracking per user
-- **📊 My Submissions Page**: Users can view status of their submitted edits
+- **📊 My Submissions Page**: Users can view status of their submitted edits with pagination (5 per page)
 - **🎨 Custom Modals**: Beautiful WordPress-style modals (no browser popups)
-- **🔄 Auto-Sync**: Automatic content sync from GitHub when PRs are merged
-- **👨‍💼 Admin PR Review**: Review, approve, and merge PRs directly from WordPress admin
-- **📈 Scalable Architecture**: Optimized for 200K+ users with caching and pagination
+- **🔗 View Diff**: Direct links to GitHub PR file changes
+- **📄 View Page**: Links to actual WordPress page for each submission
+
+#### Admin Features
+- **👥 View All Submissions**: Admins can view ALL users' pull requests, not just their own
+- **🔀 Filter Views**: Toggle between "My Submissions" and "All Users" with filter buttons
+- **✅ One-Click Approve**: "Approve & Merge" button directly on submissions page
+- **🔄 Auto-Sync After Merge**: Content automatically syncs from GitHub when PRs are merged
+- **👨‍💼 Admin PR Review**: Full PR review interface in WordPress admin with diffs
+- **📈 Pagination**: Efficient pagination for large numbers of submissions
+- **🏷️ Status Badges**: Color-coded badges (Open/Merged/Closed)
+
+#### Technical Features
+- **🔗 GitHub Integration**: One-click OAuth connection to GitHub repositories
 - **🔐 Secure & Private**: User-specific PR tracking with no PII exposed on GitHub
+- **📈 Scalable Architecture**: Optimized for 200K+ users with caching
+- **💾 Database Tracking**: Submissions table with post_type support for file-based posts
+- **🎯 Smart Post Detection**: Finds posts by slug + post_type for file-based content
 
 ### Performance Features
 
