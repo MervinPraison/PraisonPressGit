@@ -71,6 +71,13 @@ class Bootstrap {
             $reportButton->register();
         }
         
+        // Register Pull Requests page
+        if (file_exists(PRAISON_PLUGIN_DIR . '/src/Admin/PullRequestsPage.php')) {
+            require_once PRAISON_PLUGIN_DIR . '/src/Admin/PullRequestsPage.php';
+            $prPage = new \PraisonPress\Admin\PullRequestsPage();
+            $prPage->register();
+        }
+        
         // Note: Export menu is added at priority 15 by ExportPage class
         
         // Admin bar items

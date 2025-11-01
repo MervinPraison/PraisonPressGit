@@ -33,10 +33,31 @@ class GitHubClient {
     }
     
     /**
+     * Make GET request
+     */
+    public function get($endpoint) {
+        return $this->request($endpoint, 'GET');
+    }
+    
+    /**
      * Make POST request
      */
     public function post($endpoint, $data = null) {
         return $this->request($endpoint, 'POST', $data);
+    }
+    
+    /**
+     * Make PUT request
+     */
+    public function put($endpoint, $data = null) {
+        return $this->request($endpoint, 'PUT', $data);
+    }
+    
+    /**
+     * Make PATCH request
+     */
+    public function patch($endpoint, $data = null) {
+        return $this->request($endpoint, 'PATCH', $data);
     }
     
     /**

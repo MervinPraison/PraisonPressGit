@@ -287,26 +287,34 @@ class PullRequestManager {
         $endpoint = '/repos/' . $repoInfo['owner'] . '/' . $repoInfo['repo'] . '/pulls';
         $response = $this->githubClient->post($endpoint, $prData);
         
-        if (isset($response['html_url'])) {
+        // Unwrap the response (GitHubClient wraps it in success/data)
+        $prData = $response;
+        if (isset($response['success']) && $response['success'] && isset($response['data'])) {
+            $prData = $response['data'];
+        }
+        
+        if (isset($prData['html_url'])) {
             return [
                 'success' => true,
                 'message' => 'Pull request created successfully',
-                'pr_url' => $response['html_url'],
-                'pr_number' => $response['number'],
+                'pr_url' => $prData['html_url'],
+                'pr_number' => $prData['number'],
             ];
         }
         
         // Enhanced error logging
         $errorMessage = 'Failed to create pull request: ';
-        if (isset($response['message'])) {
-            $errorMessage .= $response['message'];
+        if (isset($prData['message'])) {
+            $errorMessage .= $prData['message'];
+        } elseif (isset($response['error'])) {
+            $errorMessage .= $response['error'];
         } else {
             $errorMessage .= 'Unknown error';
         }
         
         // Add detailed error info if available
-        if (isset($response['errors'])) {
-            $errorMessage .= ' - Errors: ' . json_encode($response['errors']);
+        if (isset($prData['errors'])) {
+            $errorMessage .= ' - Errors: ' . json_encode($prData['errors']);
         }
         
         // Log full response for debugging
@@ -315,7 +323,7 @@ class PullRequestManager {
         return [
             'success' => false,
             'message' => $errorMessage,
-            'debug' => $response,
+            'debug' => $prData,
         ];
     }
     
