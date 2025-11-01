@@ -366,7 +366,7 @@ class ExportPage {
         
         include plugin_dir_path(dirname(dirname(__FILE__))) . 'views/export-page.php';
     }
-}
+    
     /**
      * Push exported files to GitHub
      * 
@@ -452,3 +452,4 @@ class ExportPage {
             ];
         }
     }
+}

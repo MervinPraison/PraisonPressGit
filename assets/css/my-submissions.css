@@ -159,3 +159,74 @@
         gap: 5px;
     }
 }
+
+/* Submission Actions */
+.submission-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f0;
+    flex-wrap: wrap;
+}
+
+.submission-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 14px;
+    background: #f0f0f0;
+    color: #2c3338;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: 1px solid #dcdcde;
+}
+
+.submission-action-btn:hover {
+    background: #e0e0e0;
+    color: #1d2327;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.submission-action-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.submission-action-btn.view-diff {
+    background: #e7f5ff;
+    border-color: #0073aa;
+    color: #0073aa;
+}
+
+.submission-action-btn.view-diff:hover {
+    background: #0073aa;
+    color: white;
+}
+
+.submission-action-btn.view-page {
+    background: #f0f6fc;
+    border-color: #4f94d4;
+    color: #4f94d4;
+}
+
+.submission-action-btn.view-page:hover {
+    background: #4f94d4;
+    color: white;
+}
+
+.submission-action-btn.admin-review {
+    background: #fcf0f1;
+    border-color: #d63638;
+    color: #d63638;
+}
+
+.submission-action-btn.admin-review:hover {
+    background: #d63638;
+    color: white;
+}

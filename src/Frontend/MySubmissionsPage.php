@@ -70,10 +70,17 @@ class MySubmissionsPage {
             return ob_get_clean();
         }
         
-        // Get user's submissions from database
+        // Get pagination parameters
+        $paged = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+        $per_page = 5; // Show 5 submissions per page
+        $offset = ($paged - 1) * $per_page;
+        
+        // Get user's submissions from database with pagination
         require_once PRAISON_PLUGIN_DIR . '/src/Database/SubmissionsTable.php';
         $submissionsTable = new \PraisonPress\Database\SubmissionsTable();
-        $userSubmissions = $submissionsTable->getUserSubmissions($userId);
+        $totalSubmissions = $submissionsTable->getUserSubmissionsCount($userId);
+        $userSubmissions = $submissionsTable->getUserSubmissions($userId, null, $per_page, $offset);
+        $totalPages = ceil($totalSubmissions / $per_page);
         
         // Get PR details from GitHub for each submission
         $repoPath = get_option('praisonpress_github_repo', '');
@@ -197,6 +204,38 @@ class MySubmissionsPage {
                                     <?php echo esc_html(wp_trim_words($pr['body'], 30)); ?>
                                 </div>
                             <?php endif; ?>
+                            
+                            <div class="submission-actions">
+                                <a href="<?php echo esc_url($prUrl . '/files'); ?>" target="_blank" rel="noopener" class="submission-action-btn view-diff">
+                                    <span class="dashicons dashicons-media-code"></span> View Diff
+                                </a>
+                                
+                                <?php if (!empty($pr['db_post_title'])): ?>
+                                    <?php 
+                                    // Try to find the post by title
+                                    $post_query = new \WP_Query([
+                                        'title' => $pr['db_post_title'],
+                                        'post_type' => 'any',
+                                        'posts_per_page' => 1,
+                                        'post_status' => 'any'
+                                    ]);
+                                    if ($post_query->have_posts()): 
+                                        $post_query->the_post();
+                                        $page_url = get_permalink();
+                                        wp_reset_postdata();
+                                    ?>
+                                        <a href="<?php echo esc_url($page_url); ?>" target="_blank" class="submission-action-btn view-page">
+                                            <span class="dashicons dashicons-admin-page"></span> View Page
+                                        </a>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                                
+                                <?php if (current_user_can('manage_options')): ?>
+                                    <a href="<?php echo esc_url(admin_url('admin.php?page=praisonpress-pull-requests&pr=' . $prNumber)); ?>" class="submission-action-btn admin-review">
+                                        <span class="dashicons dashicons-admin-tools"></span> Review in Admin
+                                    </a>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
