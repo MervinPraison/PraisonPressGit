@@ -119,6 +119,23 @@ RUN chown -R www-data:www-data /var/www/html/content
 
 **Update workflow:** Build new image → Push to registry → `kubectl rollout restart deployment/wordpress`
 
+**Separate Content Repository Pattern:**
+
+Keep content in a separate Git repo for better organization:
+
+```dockerfile
+# Multi-stage build - fetch content from separate repo
+FROM alpine/git AS content
+ARG CONTENT_REPO_URL=https://github.com/your-org/content-repo.git
+RUN git clone --depth 1 ${CONTENT_REPO_URL} /content
+
+FROM wordpress:latest
+COPY ./praisonpressgit /var/www/html/wp-content/plugins/praisonpressgit
+COPY --from=content /content /var/www/html/content
+```
+
+**CI/CD:** Push to content repo → Trigger WordPress image rebuild → Auto-deploy
+
 #### Strategy 2: Persistent Volumes (For Dynamic Content)
 **Perfect for:** Frequently updated content, multi-author sites
 

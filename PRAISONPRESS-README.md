@@ -903,26 +903,84 @@ WORKDIR /var/www/html
 EXPOSE 80
 ```
 
-**Update Workflow:**
+**Separate Content Repository (Recommended):**
+
+Keep your content in a separate Git repository from your WordPress code:
+
+```
+Project Structure:
+├── wordpress-repo/          # Main WordPress/Bedrock repo
+│   ├── Dockerfile
+│   ├── web/
+│   └── config/
+└── content-repo/            # Separate content repo
+    ├── posts/
+    ├── pages/
+    └── recipes/
+```
+
+**Multi-Stage Dockerfile with Separate Content Repo:**
+
+```dockerfile
+# Stage 1: Clone content from separate repo
+FROM alpine/git AS content-fetcher
+ARG CONTENT_REPO_URL=https://github.com/your-org/content-repo.git
+ARG CONTENT_BRANCH=main
+WORKDIR /tmp
+RUN git clone --depth 1 --branch ${CONTENT_BRANCH} ${CONTENT_REPO_URL} content
+
+# Stage 2: Build WordPress image
+FROM wordpress:latest
+
+# Install Git
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
+# Copy plugin from WordPress repo
+COPY ./praisonpressgit /var/www/html/wp-content/plugins/praisonpressgit
+
+# Copy content from separate repo (fetched in stage 1)
+COPY --from=content-fetcher /tmp/content /var/www/html/content
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html/content
+
+WORKDIR /var/www/html
+EXPOSE 80
+```
+
+**Build with Build Args:**
 
 ```bash
-# 1. Update your content files locally
-cd content/posts/
-vi new-post.md
+# Build with specific content repo branch
+docker build \
+  --build-arg CONTENT_REPO_URL=https://github.com/your-org/content-repo.git \
+  --build-arg CONTENT_BRANCH=production \
+  -t your-registry/wordpress:v1.2.3 .
+```
 
-# 2. Build new image with updated content
+**Update Workflow with Separate Repos:**
+
+```bash
+# 1. Update content in content-repo
+cd content-repo/
+vi posts/new-post.md
+git add .
+git commit -m "Add new post"
+git push origin main
+
+# 2. Trigger WordPress image rebuild (auto or manual)
+cd ../wordpress-repo/
+
+# 3. Build new image (pulls latest content automatically)
 docker build -t your-registry/wordpress:v1.2.3 .
 
-# 3. Push to registry
+# 4. Push to registry
 docker push your-registry/wordpress:v1.2.3
 
-# 4. Update Kubernetes deployment
-kubectl set image deployment/wordpress wordpress=your-registry/wordpress:v1.2.3
-
-# OR simply restart with existing image (if you use :latest)
+# 5. Restart Kubernetes pods
 kubectl rollout restart deployment/wordpress -n wordpress
 
-# 5. Check rollout status
+# 6. Check rollout status
 kubectl rollout status deployment/wordpress -n wordpress
 ```
 
@@ -1420,7 +1478,240 @@ spec:
 
 ---
 
-### CI/CD Pipeline Example
+### CI/CD Pipeline Examples
+
+#### Automated Build on Content Repo Changes
+
+**Scenario:** When you push changes to your **content-repo**, automatically rebuild WordPress image and deploy.
+
+#### GitHub Actions - Content Repository
+
+Place this in your **content-repo** at `.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy Content Updates
+
+on:
+  push:
+    branches:
+      - main
+      - production
+    paths:
+      - 'posts/**'
+      - 'pages/**'
+      - 'recipes/**'
+
+jobs:
+  trigger-wordpress-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger WordPress Image Build
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.WORDPRESS_REPO_PAT }}
+          repository: your-org/wordpress-repo
+          event-type: content-updated
+          client-payload: '{
+            "content_branch": "${{ github.ref_name }}",
+            "content_commit": "${{ github.sha }}"
+          }'
+```
+
+#### GitHub Actions - WordPress Repository
+
+Place this in your **wordpress-repo** at `.github/workflows/build-deploy.yml`:
+
+```yaml
+name: Build and Deploy WordPress
+
+on:
+  push:
+    branches:
+      - main
+  repository_dispatch:
+    types: [content-updated]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  CONTENT_REPO: your-org/content-repo
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout WordPress repo
+        uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CONTENT_REPO_URL=https://github.com/${{ env.CONTENT_REPO }}.git
+            CONTENT_BRANCH=${{ github.event.client_payload.content_branch || 'main' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Deploy to Kubernetes
+        uses: tale/kubectl-action@v1
+        with:
+          base64-kube-config: ${{ secrets.KUBE_CONFIG }}
+      
+      - name: Restart Deployment
+        run: |
+          kubectl rollout restart deployment/wordpress -n wordpress
+          kubectl rollout status deployment/wordpress -n wordpress --timeout=5m
+```
+
+#### GitLab CI - Content Repository
+
+Place this in your **content-repo** at `.gitlab-ci.yml`:
+
+```yaml
+stages:
+  - trigger
+
+trigger-wordpress-build:
+  stage: trigger
+  only:
+    - main
+    - production
+  changes:
+    - posts/**/*
+    - pages/**/*
+    - recipes/**/*
+  script:
+    - |
+      curl -X POST \
+        -F token=$WORDPRESS_TRIGGER_TOKEN \
+        -F ref=main \
+        -F "variables[CONTENT_BRANCH]=$CI_COMMIT_REF_NAME" \
+        -F "variables[CONTENT_COMMIT]=$CI_COMMIT_SHA" \
+        https://gitlab.com/api/v4/projects/$WORDPRESS_PROJECT_ID/trigger/pipeline
+```
+
+#### GitLab CI - WordPress Repository
+
+Place this in your **wordpress-repo** at `.gitlab-ci.yml`:
+
+```yaml
+variables:
+  DOCKER_REGISTRY: registry.gitlab.com
+  IMAGE_NAME: $CI_REGISTRY_IMAGE
+  CONTENT_REPO: https://gitlab.com/your-org/content-repo.git
+  CONTENT_BRANCH: ${CONTENT_BRANCH:-main}
+
+stages:
+  - build
+  - deploy
+
+build-image:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - |
+      docker build \
+        --build-arg CONTENT_REPO_URL=$CONTENT_REPO \
+        --build-arg CONTENT_BRANCH=$CONTENT_BRANCH \
+        -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA \
+        -t $IMAGE_NAME:latest \
+        .
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $IMAGE_NAME:latest
+  only:
+    - main
+    - production
+
+deploy-kubernetes:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  script:
+    - kubectl config use-context your-cluster
+    - kubectl rollout restart deployment/wordpress -n wordpress
+    - kubectl rollout status deployment/wordpress -n wordpress --timeout=5m
+  only:
+    - main
+  when: on_success
+```
+
+#### Simple Webhook Trigger (Alternative)
+
+For simpler setups, use a webhook to trigger builds:
+
+**In content-repo** (GitHub webhook settings):
+```
+Payload URL: https://your-ci-cd.com/api/trigger
+Content type: application/json
+Events: Just the push event
+```
+
+**Webhook handler script:**
+```bash
+#!/bin/bash
+# webhook-handler.sh
+
+set -e
+
+CONTENT_BRANCH=${1:-main}
+CONTENT_COMMIT=${2:-HEAD}
+
+echo "Content updated: branch=$CONTENT_BRANCH commit=$CONTENT_COMMIT"
+
+# Navigate to WordPress repo
+cd /path/to/wordpress-repo
+
+# Pull latest
+git pull origin main
+
+# Build image with latest content
+docker build \
+  --build-arg CONTENT_REPO_URL=https://github.com/your-org/content-repo.git \
+  --build-arg CONTENT_BRANCH=$CONTENT_BRANCH \
+  -t your-registry/wordpress:latest .
+
+# Push to registry
+docker push your-registry/wordpress:latest
+
+# Deploy to Kubernetes
+kubectl rollout restart deployment/wordpress -n wordpress
+
+echo "✅ Deployment complete!"
+```
+
+---
 
 #### GitOps Workflow for Content Updates
 
