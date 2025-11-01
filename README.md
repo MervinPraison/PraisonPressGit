@@ -132,6 +132,103 @@ git clone https://github.com/your-repo/praisonpressgit.git
 wp plugin install praisonpressgit --activate
 ```
 
+## ⚙️ Configuration
+
+PraisonPressGit uses two main configuration files:
+
+### 1. Site Settings (`site-settings.ini`)
+
+**Location:** `/content/site-settings.ini`
+
+```ini
+[site]
+title = "My WordPress Site"
+description = "A Git-powered WordPress site"
+
+[content]
+enabled = true
+content_dir = "content"
+post_types[] = "post"
+post_types[] = "page"
+post_types[] = "lyrics"
+post_types[] = "bible"
+
+[cache]
+enabled = true
+ttl = 3600
+
+[performance]
+use_build_index = true
+build_index_threshold = 1000
+```
+
+### 2. Export Configuration (`export-config.ini`)
+
+**Location:** `/wp-content/plugins/praisonpressgit/export-config.ini`
+
+#### Default Behavior
+
+Post types **not in config** use defaults:
+- Directory: `/content/{post_type}/`
+- Structure: Flat
+- Filename: `{slug}.md`
+
+#### Configuration Examples
+
+**Lyrics (Alphabetical):**
+```ini
+[lyrics]
+directory = "lyrics"
+structure = "alphabetical"
+alphabetical_field = "title"
+filename_pattern = "{slug}.md"
+custom_fields[] = "artist"
+```
+Result: `/content/lyrics/a/amazing-grace.md`
+
+**Bible (Hierarchical):**
+```ini
+[bible]
+directory = "bible"
+structure = "hierarchical"
+hierarchy_levels[] = "book"
+hierarchy_levels[] = "chapter"
+hierarchy_levels[] = "verse"
+filename_pattern = "{verse}.md"
+```
+Result: `/content/bible/genesis/1/1.md`
+
+**Articles (Date-Based):**
+```ini
+[articles]
+directory = "articles"
+structure = "date"
+date_depth = 2
+filename_pattern = "{date}-{slug}.md"
+```
+Result: `/content/articles/2025/11/2025-11-01-article.md`
+
+#### Directory Structures
+
+| Structure | Description |
+|-----------|-------------|
+| `flat` | No subdirectories |
+| `alphabetical` | By first letter (a/, b/, c/) |
+| `hierarchical` | Custom field-based (e.g., /genesis/1/1.md) |
+| `category` | By post category |
+| `date` | By year/month/day |
+
+#### Filename Variables
+
+| Variable | Example |
+|----------|----------|
+| `{slug}` | `my-post` |
+| `{title}` | `my-post-title` |
+| `{date}` | `2025-11-01` |
+| `{id}` | `123` |
+
+---
+
 ## Directory Structure
 
 ```
