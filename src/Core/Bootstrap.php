@@ -192,25 +192,57 @@ class Bootstrap {
         // Check if this is a file-based post type and load accordingly
         // For custom post types, inject even if not main query (for WP_Query calls)
         
+        // Get file-based posts
+        $file_posts = null;
+        
         // Special case: praison_post maps to 'posts' directory
         if ($post_type === 'praison_post' && is_array($this->postLoaders) && isset($this->postLoaders['posts'])) {
-            return $this->postLoaders['posts']->loadPosts($query);
+            $file_posts = $this->postLoaders['posts']->loadPosts($query);
         }
-        
         // Check if we have a loader for this post type
-        if (is_array($this->postLoaders) && isset($this->postLoaders[$post_type])) {
-            return $this->postLoaders[$post_type]->loadPosts($query);
+        elseif (is_array($this->postLoaders) && isset($this->postLoaders[$post_type])) {
+            $file_posts = $this->postLoaders[$post_type]->loadPosts($query);
         }
-        
         // Dynamic loader creation: If post type directory exists but no loader, create one
-        $post_type_dir = PRAISON_CONTENT_DIR . '/' . $post_type;
-        if (is_dir($post_type_dir)) {
-            // Create PostLoader on-the-fly for this post type
-            $this->postLoaders[$post_type] = new \PraisonPress\Loaders\PostLoader($post_type);
-            return $this->postLoaders[$post_type]->loadPosts($query);
+        else {
+            $post_type_dir = PRAISON_CONTENT_DIR . '/' . $post_type;
+            if (is_dir($post_type_dir)) {
+                $this->postLoaders[$post_type] = new \PraisonPress\Loaders\PostLoader($post_type);
+                $file_posts = $this->postLoaders[$post_type]->loadPosts($query);
+            }
         }
         
-        return $posts;
+        // If no file-based posts, return database posts as-is
+        if (empty($file_posts)) {
+            return $posts;
+        }
+        
+        // If $posts is null (posts_pre_query before DB query), return only file-based posts
+        // This happens when WordPress hasn't queried the database yet
+        if ($posts === null) {
+            return $file_posts;
+        }
+        
+        // MERGE: Combine database posts with file-based posts
+        // File-based posts take precedence for duplicate slugs
+        $merged = [];
+        $slugs_seen = [];
+        
+        // Add file-based posts first (they take precedence)
+        foreach ($file_posts as $post) {
+            $merged[] = $post;
+            $slugs_seen[$post->post_name] = true;
+        }
+        
+        // Add database posts that don't conflict with file-based posts
+        foreach ($posts as $post) {
+            if (!isset($slugs_seen[$post->post_name])) {
+                $merged[] = $post;
+                $slugs_seen[$post->post_name] = true;
+            }
+        }
+        
+        return $merged;
     }
     
     /**

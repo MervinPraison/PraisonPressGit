@@ -30,10 +30,13 @@ class PostLoader {
      */
     public function loadPosts($query) {
         // Build cache key using actual post type
+        // Include slug and post ID to ensure unique keys for different posts
         $cache_key = CacheManager::getContentKey($this->postType, [
             'paged' => $query->get('paged'),
             'posts_per_page' => $query->get('posts_per_page'),
             's' => $query->get('s'),
+            'name' => $query->get('name'),  // Slug for single post queries
+            'p' => $query->get('p'),        // Post ID
         ]);
         
         // Check cache
@@ -88,8 +91,14 @@ class PostLoader {
             return $this->loadFromIndex($indexFile);
         }
         
-        // Fallback: Scan directory (slower for large directories)
+        // Fallback: Scan directory recursively (supports subdirectories)
         $files = glob($this->postsDir . '/*.md');
+        
+        // Also scan subdirectories (for hierarchical organization)
+        $subdirFiles = glob($this->postsDir . '/*/*.md');
+        if (!empty($subdirFiles)) {
+            $files = array_merge($files, $subdirFiles);
+        }
         
         if (empty($files)) {
             return [];
@@ -284,6 +293,18 @@ class PostLoader {
         $filtered = [];
         
         foreach ($posts as $post) {
+            // Match by slug (for single post queries)
+            $slug = $query->get('name');
+            if ($slug && $post->post_name !== $slug) {
+                continue;
+            }
+            
+            // Match by post ID
+            $post_id = $query->get('p');
+            if ($post_id && $post->ID != $post_id) {
+                continue;
+            }
+            
             // Match post status
             $status = $query->get('post_status');
             if ($status && $status !== 'any' && $post->post_status !== $status) {
