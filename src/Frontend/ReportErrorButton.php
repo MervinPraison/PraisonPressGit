@@ -39,7 +39,7 @@ class ReportErrorButton {
             'praisonpress-report-error',
             PRAISON_PLUGIN_URL . 'assets/css/report-error.css',
             [],
-            '1.0.0'
+            '1.0.4'
         );
         
         // Enqueue scripts
@@ -47,7 +47,7 @@ class ReportErrorButton {
             'praisonpress-report-error',
             PRAISON_PLUGIN_URL . 'assets/js/report-error.js',
             ['jquery'],
-            '1.0.0',
+            '1.0.1',
             true
         );
         
@@ -107,9 +107,9 @@ class ReportErrorButton {
                         <textarea id="praisonpress-edit-description" rows="3" placeholder="e.g., Fixed typo in second paragraph"></textarea>
                     </div>
                 </div>
-                <div class="praisonpress-modal-footer">
-                    <button type="button" class="praisonpress-btn praisonpress-btn-secondary praisonpress-modal-close">Cancel</button>
-                    <button type="button" id="praisonpress-submit-edit" class="praisonpress-btn praisonpress-btn-primary">Submit Edit</button>
+                <div class="praisonpress-modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="praisonpress-btn praisonpress-btn-secondary praisonpress-modal-close" style="min-width: 80px; font-size: 14px; padding: 8px 16px;">Cancel</button>
+                    <button type="button" id="praisonpress-submit-edit" class="praisonpress-btn praisonpress-btn-primary" style="min-width: 100px; font-size: 14px; padding: 8px 16px;">Submit Edit</button>
                 </div>
             </div>
         </div>

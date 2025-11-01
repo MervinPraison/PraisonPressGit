@@ -152,7 +152,7 @@
 .praisonpress-modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 10px;
     padding: 20px 24px;
     border-top: 1px solid #ddd;
 }
@@ -169,6 +169,7 @@
 .praisonpress-btn-secondary {
     background: #f0f0f1;
     color: #2c3338;
+    margin-right: 10px;
 }
 
 .praisonpress-btn-secondary:hover {
