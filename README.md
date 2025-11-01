@@ -562,4 +562,73 @@ If you find this plugin helpful, please:
 
 ---
 
+## 📤 Export to Markdown
+
+### Quick Export
+
+**CLI Export (All post types):**
+```bash
+php wp-content/plugins/praisonpressgit/scripts/export-to-markdown.php
+```
+
+**Admin Panel Export:**
+- Go to **PraisonPress → Export**
+- Select post type (or "All Post Types")
+- Choose batch size (100 recommended for 50K+ posts)
+- Click "Start Export"
+- Background processing with real-time progress tracking
+
+### What Gets Exported
+
+✅ **All Content & Metadata:**
+- Post title, content, excerpt, status, dates
+- Categories, tags, and ALL custom taxonomies
+- Featured images
+- ALL custom fields (including ACF fields)
+- Author information
+
+✅ **ACF (Advanced Custom Fields) Support:**
+- Automatically detects ACF plugin
+- Exports ALL ACF field types (repeaters, flexible content, galleries, relationships)
+- Uses ACF API for proper formatting
+- Works with 50+ field groups
+
+✅ **Large Exports (50K+ posts):**
+- Background processing (WP-Cron)
+- Configurable batch sizes
+- Real-time progress tracking
+- Safe for shared hosting
+- Page-closeable (runs in background)
+
+### Export Output Format
+
+```yaml
+---
+title: "Post Title"
+slug: "post-slug"
+author: "admin"
+date: "2024-10-31 12:00:00"
+status: "publish"
+categories:
+  - "Category 1"
+tags:
+  - "tag1"
+# All custom taxonomies (artist, album, book, etc.)
+artist:
+  - "Artist Name"
+# All custom fields including ACF
+custom_fields:
+  field_name: "value"
+  acf_repeater:
+    - item: "value1"
+    - item: "value2"
+---
+
+# Content in Markdown
+
+Your content here...
+```
+
+---
+
 **Made with ❤️ for WordPress developers who love Git and Markdown**

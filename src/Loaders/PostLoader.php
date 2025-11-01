@@ -189,6 +189,13 @@ class PostLoader {
             $post->_praison_featured_image = $entry['featured_image'] ?? '';
             $post->_praison_custom_fields = $entry['custom'] ?? [];
             
+            // Store custom fields as post properties for ACF compatibility
+            if (!empty($entry['custom'])) {
+                foreach ($entry['custom'] as $key => $value) {
+                    $post->{$key} = $value;
+                }
+            }
+            
             $posts[] = $post;
         }
         
@@ -253,6 +260,15 @@ class PostLoader {
         $post->_praison_tags = $metadata['tags'] ?? [];
         $post->_praison_featured_image = $metadata['featured_image'] ?? '';
         $post->_praison_custom_fields = $metadata['custom_fields'] ?? [];
+        
+        // Store custom fields as post meta for ACF compatibility
+        // This allows get_field() and other ACF functions to work
+        if (!empty($metadata['custom_fields'])) {
+            foreach ($metadata['custom_fields'] as $key => $value) {
+                // Store in the post object so ACF can access it
+                $post->{$key} = $value;
+            }
+        }
         
         return $post;
     }

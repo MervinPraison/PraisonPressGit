@@ -3,6 +3,7 @@ namespace PraisonPress\Core;
 
 use PraisonPress\Loaders\PostLoader;
 use PraisonPress\Cache\CacheManager;
+use PraisonPress\Admin\ExportPage;
 
 /**
  * Bootstrap PraisonPress plugin
@@ -53,6 +54,11 @@ class Bootstrap {
         
         // Admin bar items
         add_action('admin_bar_menu', [$this, 'addAdminBarItems'], 100);
+        
+        // Initialize export page
+        if (is_admin()) {
+            new ExportPage();
+        }
         
         // Cache management
         add_action('admin_post_praison_clear_cache', [$this, 'handleClearCache']);
