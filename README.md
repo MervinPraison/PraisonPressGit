@@ -12,6 +12,12 @@
 
 ### Core Features
 
+- **📤 Export to Markdown**: Convert existing WordPress content to Markdown files
+  - Admin UI with progress tracking and background processing
+  - CLI support for automation and large exports
+  - Preserves all metadata, custom fields, taxonomies, categories, and tags
+  - Full ACF (Advanced Custom Fields) support
+  - Handles 50,000+ posts efficiently
 - **File-Based Content Management**: Store posts, pages, and custom post types as Markdown files
 - **Version Control Ready**: Designed to work with Git for tracking content changes  
 - **No Database Writes**: Read-only approach - content stays in files
@@ -563,6 +569,8 @@ If you find this plugin helpful, please:
 ---
 
 ## 📤 Export to Markdown
+
+**Production-Ready Feature** - Convert your existing WordPress content to Markdown files with full metadata preservation. Tested with large-scale exports (50,000+ posts).
 
 ### Quick Export
 
