@@ -134,11 +134,29 @@ wp plugin install praisonpressgit --activate
 
 ## ⚙️ Configuration
 
-PraisonPressGit uses two main configuration files:
+PraisonPressGit works out-of-the-box with sensible defaults. Configuration files are **optional** and only needed for customization.
+
+### Default Behavior (No Configuration)
+
+When you install the plugin, it automatically:
+- Exports to `/content/{post_type}/` directories
+- Uses flat structure (no subdirectories)
+- Includes date prefix in filenames: `YYYY-MM-DD-slug.md`
+- Preserves all metadata, categories, tags, and custom fields
+
+**Example:** A post titled "My Article" published on 2025-11-01 exports to:
+```
+/content/post/2025-11-01-my-article.md
+```
+
+### Optional Configuration Files
+
+For advanced customization, you can create configuration files:
 
 ### 1. Site Settings (`site-settings.ini`)
 
-**Location:** `/content/site-settings.ini`
+**Location:** `/wp-content/plugins/praisonpressgit/site-settings.ini`
+**Example:** `/wp-content/plugins/praisonpressgit/site-settings.ini.example`
 
 ```ini
 [site]
@@ -165,13 +183,24 @@ build_index_threshold = 1000
 ### 2. Export Configuration (`export-config.ini`)
 
 **Location:** `/wp-content/plugins/praisonpressgit/export-config.ini`
+**Example:** `/wp-content/plugins/praisonpressgit/export-config.ini.example`
 
-#### Default Behavior
+This file is **optional**. Only create it if you need custom export behavior.
 
-Post types **not in config** use defaults:
+#### Default Behavior (No Config File)
+
+Without a config file, all post types export with:
 - Directory: `/content/{post_type}/`
-- Structure: Flat
-- Filename: `{slug}.md`
+- Structure: Flat (no subdirectories)
+- Filename: `{date}-{slug}.md` (with date prefix)
+- All metadata preserved
+
+#### Custom Configuration
+
+To customize export behavior:
+1. Copy `export-config.ini.example` to `export-config.ini`
+2. Uncomment and modify the post types you want to customize
+3. Leave other post types commented to use defaults
 
 #### Configuration Examples
 

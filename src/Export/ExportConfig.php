@@ -30,16 +30,23 @@ class ExportConfig {
      * Load configuration from INI file
      */
     private function loadConfig() {
+        // Try main config file first
         if (!file_exists($this->configFile)) {
-            // Use default configuration
-            $this->config = $this->getDefaultConfig();
-            return;
+            // Try .example file
+            $exampleFile = $this->configFile . '.example';
+            if (file_exists($exampleFile)) {
+                $this->configFile = $exampleFile;
+            } else {
+                // Use default configuration
+                $this->config = $this->getDefaultConfig();
+                return;
+            }
         }
         
         $parsed = parse_ini_file($this->configFile, true);
         
         if ($parsed === false) {
-            error_log('PraisonPress: Failed to parse export-config.ini');
+            error_log('PraisonPress: Failed to parse export config file');
             $this->config = $this->getDefaultConfig();
             return;
         }
@@ -74,11 +81,12 @@ class ExportConfig {
         }
         
         // Return default configuration
+        // Default behavior: flat structure with date prefix
         return [
             'directory' => $postType,
             'structure' => 'flat',
-            'filename_pattern' => '{slug}.md',
-            'date_prefix' => false,
+            'filename_pattern' => '{date}-{slug}.md',
+            'date_prefix' => true,  // Include date by default
             'custom_fields' => [],
         ];
     }
