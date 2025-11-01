@@ -1,5 +1,6 @@
-#!/usr/bin/env php
 <?php
+// Shebang removed - was breaking AJAX JSON responses when included
+// For CLI usage: php export-to-markdown.php
 /**
  * Export WordPress Content to Markdown
  * 
@@ -249,7 +250,10 @@ function export_post_to_markdown($post, $output_dir) {
     $result = file_put_contents($filepath, $full_content);
     
     if ($result !== false) {
-        echo "✅ Exported: {$filename} ({$post->post_type})\n";
+        // Only echo in CLI mode, not during AJAX
+        if (defined('WP_CLI') && WP_CLI) {
+            echo "✅ Exported: {$filename} ({$post->post_type})\n";
+        }
         return true;
     } else {
         echo "❌ Failed: {$filename}\n";

@@ -43,22 +43,24 @@ class Bootstrap {
         // Virtual post injection - THE CORE MAGIC!
         add_filter('posts_pre_query', [$this, 'injectFilePosts'], 10, 2);
         
-        // Admin features
+        // Initialize export page early (before admin_menu)
+        if (is_admin()) {
+            new ExportPage();
+        }
+        
+        // Admin features (priority 10 - default)
         add_action('admin_menu', [$this, 'addAdminMenu']);
         
         // Dashboard widget
         add_action('wp_dashboard_setup', [$this, 'addDashboardWidget']);
         
-        // Version history submenu
+        // Version history submenu (priority 20 - appears after Export)
         add_action('admin_menu', [$this, 'addHistoryMenu'], 20);
+        
+        // Note: Export menu is added at priority 15 by ExportPage class
         
         // Admin bar items
         add_action('admin_bar_menu', [$this, 'addAdminBarItems'], 100);
-        
-        // Initialize export page
-        if (is_admin()) {
-            new ExportPage();
-        }
         
         // Cache management
         add_action('admin_post_praison_clear_cache', [$this, 'handleClearCache']);
@@ -161,6 +163,11 @@ class Bootstrap {
      * @return array|null
      */
     public function injectFilePosts($posts, $query) {
+        // Skip injection in admin/CLI contexts to prevent breaking WP_Query during export
+        if (is_admin() || (defined('WP_CLI') && WP_CLI)) {
+            return $posts;
+        }
+        
         // Get the post type being queried
         $post_type = $query->get('post_type');
         
@@ -182,12 +189,12 @@ class Bootstrap {
         // For custom post types, inject even if not main query (for WP_Query calls)
         
         // Special case: praison_post maps to 'posts' directory
-        if ($post_type === 'praison_post' && isset($this->postLoaders['posts'])) {
+        if ($post_type === 'praison_post' && is_array($this->postLoaders) && isset($this->postLoaders['posts'])) {
             return $this->postLoaders['posts']->loadPosts($query);
         }
         
         // Check if we have a loader for this post type
-        if (isset($this->postLoaders[$post_type])) {
+        if (is_array($this->postLoaders) && isset($this->postLoaders[$post_type])) {
             return $this->postLoaders[$post_type]->loadPosts($query);
         }
         
@@ -198,6 +205,7 @@ class Bootstrap {
      * Add admin menu
      */
     public function addAdminMenu() {
+        // Add main menu page
         add_menu_page(
             'PraisonPress',
             'PraisonPress',
@@ -208,14 +216,30 @@ class Bootstrap {
             30
         );
         
+        // Rename the default submenu item (WordPress auto-creates one)
+        // Priority: This runs at default priority 10
         add_submenu_page(
             'praisonpress',
-            'Settings',
-            'Settings',
+            'Dashboard',
+            'Dashboard',
             'manage_options',
-            'praisonpress-settings',
-            [$this, 'renderSettingsPage']
+            'praisonpress',  // Same as parent - this renames the default
+            [$this, 'renderAdminPage']
         );
+        
+        // Note: Export menu added at priority 15 by ExportPage class
+        
+        // Settings will be added separately with priority 16
+        add_action('admin_menu', function() {
+            add_submenu_page(
+                'praisonpress',
+                'Settings',
+                'Settings',
+                'manage_options',
+                'praisonpress-settings',
+                [$this, 'renderSettingsPage']
+            );
+        }, 16);
     }
     
     /**

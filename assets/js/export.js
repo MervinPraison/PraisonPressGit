@@ -43,16 +43,38 @@
             success: function(response) {
                 if (response.success) {
                     currentJobId = response.data.job_id;
-                    $('#status-text').text('Export running in background...');
                     
-                    // Start checking status
-                    statusCheckInterval = setInterval(checkExportStatus, 2000);
+                    // Check if export completed synchronously (small dataset)
+                    if (response.data.status === 'completed') {
+                        $('#status-text').text('Export completed!');
+                        showComplete(response.data);
+                    } else {
+                        // Background export - start polling
+                        $('#status-text').text('Export running in background...');
+                        statusCheckInterval = setInterval(checkExportStatus, 2000);
+                    }
                 } else {
-                    showError(response.data.message || 'Failed to start export');
+                    // Show actual error from server
+                    var errorMsg = response.data && response.data.message ? response.data.message : 'Failed to start export';
+                    var debugInfo = response.data && response.data.debug ? ' (' + response.data.debug + ')' : '';
+                    showError(errorMsg + debugInfo);
                 }
             },
-            error: function() {
-                showError('Network error. Please try again.');
+            error: function(xhr, status, error) {
+                // Show actual network/server error
+                var errorMsg = 'Request failed: ' + status;
+                if (xhr.responseText) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.data && response.data.message) {
+                            errorMsg = response.data.message;
+                        }
+                    } catch(e) {
+                        errorMsg += ' (Unable to parse response)';
+                    }
+                }
+                console.error('Export AJAX Error:', xhr, status, error);
+                showError(errorMsg);
             }
         });
     }

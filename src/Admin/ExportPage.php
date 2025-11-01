@@ -12,7 +12,7 @@ class ExportPage {
      * Initialize export page
      */
     public function __construct() {
-        add_action('admin_menu', [$this, 'addMenuPage']);
+        add_action('admin_menu', [$this, 'addMenuPage'], 15); // Priority 15 - after Dashboard (10), before History (20)
         add_action('admin_enqueue_scripts', [$this, 'enqueueScripts']);
         add_action('wp_ajax_praison_start_export', [$this, 'ajaxStartExport']);
         add_action('wp_ajax_praison_export_status', [$this, 'ajaxExportStatus']);
@@ -25,7 +25,7 @@ class ExportPage {
      */
     public function addMenuPage() {
         add_submenu_page(
-            'praison-dashboard',
+            'praisonpress',  // Fixed: matches the parent menu slug in Bootstrap.php
             'Export to Markdown',
             'Export',
             'manage_options',
@@ -46,14 +46,14 @@ class ExportPage {
             'praison-export-css',
             plugins_url('../../assets/css/export.css', __FILE__),
             [],
-            '1.0.0'
+            '1.0.2'
         );
         
         wp_enqueue_script(
             'praison-export-js',
             plugins_url('../../assets/js/export.js', __FILE__),
             ['jquery'],
-            '1.0.0',
+            '1.0.3',  // Fixed shebang breaking JSON response
             true
         );
         
@@ -67,10 +67,22 @@ class ExportPage {
      * AJAX: Start export process
      */
     public function ajaxStartExport() {
-        check_ajax_referer('praison_export_nonce', 'nonce');
+        // Verify nonce
+        if (!check_ajax_referer('praison_export_nonce', 'nonce', false)) {
+            wp_send_json_error([
+                'message' => 'Security check failed. Please refresh the page and try again.',
+                'debug' => 'Nonce verification failed'
+            ]);
+            return;
+        }
         
+        // Check permissions
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Permission denied']);
+            wp_send_json_error([
+                'message' => 'You do not have permission to export content.',
+                'debug' => 'User lacks manage_options capability'
+            ]);
+            return;
         }
         
         $post_type = isset($_POST['post_type']) ? sanitize_text_field($_POST['post_type']) : 'all';
@@ -94,8 +106,62 @@ class ExportPage {
             $total_posts += $post_count;
         }
         
+        // For small datasets (< 100 posts), do synchronous export (faster, more reliable)
+        if ($total_posts < 100) {
+            require_once plugin_dir_path(dirname(dirname(__FILE__))) . 'scripts/export-to-markdown.php';
+            
+            $successful = 0;
+            $failed = 0;
+            
+            foreach ($post_types as $type) {
+                $output_dir = WP_CONTENT_DIR . '/../content/' . $type;
+                if (!is_dir($output_dir)) {
+                    wp_mkdir_p($output_dir);
+                }
+                
+                $args = [
+                    'post_type' => $type,
+                    'posts_per_page' => -1,
+                    'post_status' => ['publish', 'draft', 'pending', 'future', 'private'],
+                ];
+                
+                $query = new \WP_Query($args);
+                
+                if ($query->have_posts()) {
+                    while ($query->have_posts()) {
+                        $query->the_post();
+                        $post = get_post();
+                        
+                        if (export_post_to_markdown($post, $output_dir)) {
+                            $successful++;
+                        } else {
+                            $failed++;
+                        }
+                    }
+                    
+                    wp_reset_postdata();
+                }
+            }
+            
+            $processed = $successful + $failed;
+            
+            // Return immediate success for small exports
+            wp_send_json_success([
+                'job_id' => 'sync_' . time(),
+                'total_posts' => $total_posts,
+                'processed' => $processed,
+                'successful' => $successful,
+                'failed' => $failed,
+                'status' => 'completed',
+                'progress' => $total_posts > 0 ? round(($processed / $total_posts) * 100) : 100,
+                'message' => sprintf('Export completed! %d posts exported successfully.', $successful)
+            ]);
+            return;
+        }
+        
         // Store export job in transient
         $job_id = 'export_' . time() . '_' . wp_generate_password(8, false);
+        $first_post_type = reset($post_types); // Get first element from array
         $job_data = [
             'id' => $job_id,
             'status' => 'started',
@@ -106,7 +172,7 @@ class ExportPage {
             'successful' => 0,
             'failed' => 0,
             'batch_size' => $batch_size,
-            'current_type' => $post_types[0],
+            'current_type' => $first_post_type, // Fixed: properly get first post type
             'current_page' => 1,
             'started_at' => current_time('mysql'),
             'updated_at' => current_time('mysql'),
@@ -115,7 +181,7 @@ class ExportPage {
         set_transient('praison_export_' . $job_id, $job_data, DAY_IN_SECONDS);
         
         // Schedule first batch
-        wp_schedule_single_event(time(), 'praison_background_export', [$job_id, $post_types[0], 1]);
+        wp_schedule_single_event(time(), 'praison_background_export', [$job_id, $first_post_type, 1]);
         
         wp_send_json_success([
             'job_id' => $job_id,
