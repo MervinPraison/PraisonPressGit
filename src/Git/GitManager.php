@@ -95,8 +95,10 @@ class GitManager {
         $oldDir = getcwd();
         chdir($this->contentDir);
         
+        // Use proper escaping for git log format
         $format = '--pretty=format:%H|%an|%ae|%at|%s';
-        exec("git log $format -$limit 2>&1", $output, $return);
+        $command = sprintf('git log %s -%d 2>&1', escapeshellarg($format), (int)$limit);
+        exec($command, $output, $return);
         
         chdir($oldDir);
         
@@ -193,6 +195,58 @@ class GitManager {
             'available' => $this->gitAvailable,
             'repo' => $this->isGitRepo(),
             'path' => $this->contentDir,
+        ];
+    }
+    
+    /**
+     * Get commit details including diff
+     */
+    public function getCommitDetails($hash) {
+        if (!$this->gitAvailable || !$this->isGitRepo()) {
+            return [];
+        }
+        
+        $oldDir = getcwd();
+        chdir($this->contentDir);
+        
+        // Get commit info
+        $format = '--pretty=format:%H|%an|%ae|%at|%s';
+        $command = sprintf('git show %s %s 2>&1', escapeshellarg($format), escapeshellarg($hash));
+        exec($command, $output, $return);
+        
+        if ($return !== 0 || empty($output)) {
+            chdir($oldDir);
+            return [];
+        }
+        
+        // Parse first line (commit info)
+        $parts = explode('|', $output[0]);
+        if (count($parts) !== 5) {
+            chdir($oldDir);
+            return [];
+        }
+        
+        // Get files changed
+        $filesCommand = sprintf('git show --name-only --pretty=format: %s 2>&1', escapeshellarg($hash));
+        exec($filesCommand, $filesOutput, $filesReturn);
+        $files = array_filter($filesOutput); // Remove empty lines
+        
+        // Get full diff
+        $diffCommand = sprintf('git show %s 2>&1', escapeshellarg($hash));
+        exec($diffCommand, $diffOutput, $diffReturn);
+        $diff = implode("\n", $diffOutput);
+        
+        chdir($oldDir);
+        
+        return [
+            'hash' => $parts[0],
+            'author' => $parts[1],
+            'email' => $parts[2],
+            'timestamp' => (int)$parts[3],
+            'message' => $parts[4],
+            'date' => gmdate('Y-m-d H:i:s', (int)$parts[3]),
+            'files' => $files,
+            'diff' => $diff,
         ];
     }
 }
