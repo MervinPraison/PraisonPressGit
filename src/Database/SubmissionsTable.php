@@ -80,9 +80,11 @@ class SubmissionsTable {
      * 
      * @param int $userId WordPress user ID
      * @param string $status Filter by status (optional)
+     * @param int $limit Limit number of results (default: 50)
+     * @param int $offset Offset for pagination (default: 0)
      * @return array Array of submission objects
      */
-    public function getUserSubmissions($userId, $status = null) {
+    public function getUserSubmissions($userId, $status = null, $limit = 50, $offset = 0) {
         global $wpdb;
         
         $sql = "SELECT * FROM {$this->tableName} WHERE user_id = %d";
@@ -93,9 +95,32 @@ class SubmissionsTable {
             $params[] = $status;
         }
         
-        $sql .= " ORDER BY created_at DESC";
+        $sql .= " ORDER BY created_at DESC LIMIT %d OFFSET %d";
+        $params[] = $limit;
+        $params[] = $offset;
         
         return $wpdb->get_results($wpdb->prepare($sql, $params));
+    }
+    
+    /**
+     * Get total count of user submissions
+     * 
+     * @param int $userId WordPress user ID
+     * @param string $status Filter by status (optional)
+     * @return int Total count
+     */
+    public function getUserSubmissionsCount($userId, $status = null) {
+        global $wpdb;
+        
+        $sql = "SELECT COUNT(*) FROM {$this->tableName} WHERE user_id = %d";
+        $params = array($userId);
+        
+        if ($status) {
+            $sql .= " AND status = %s";
+            $params[] = $status;
+        }
+        
+        return (int) $wpdb->get_var($wpdb->prepare($sql, $params));
     }
     
     /**

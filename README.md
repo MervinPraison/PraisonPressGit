@@ -38,6 +38,19 @@
 - **🌐 Multi-Pod Support**: Horizontal scaling with shared storage
 - **🔧 WP-CLI Support**: Command-line tools for automation
 
+### 🤝 Collaborative Editing Features (NEW)
+
+- **✏️ Frontend "Report Error" Button**: Allow logged-in users to suggest edits on any post
+- **🔗 GitHub Integration**: One-click OAuth connection to GitHub repositories
+- **📝 Pull Request Workflow**: Automatic PR creation for user-submitted edits
+- **👥 User Submissions Tracking**: Secure database-backed PR tracking per user
+- **📊 My Submissions Page**: Users can view status of their submitted edits
+- **🎨 Custom Modals**: Beautiful WordPress-style modals (no browser popups)
+- **🔄 Auto-Sync**: Automatic content sync from GitHub when PRs are merged
+- **👨‍💼 Admin PR Review**: Review, approve, and merge PRs directly from WordPress admin
+- **📈 Scalable Architecture**: Optimized for 200K+ users with caching and pagination
+- **🔐 Secure & Private**: User-specific PR tracking with no PII exposed on GitHub
+
 ### Performance Features
 
 - **Intelligent Caching**: Transient-based caching with configurable TTL

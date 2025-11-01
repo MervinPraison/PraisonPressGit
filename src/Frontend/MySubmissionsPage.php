@@ -57,6 +57,17 @@ class MySubmissionsPage {
         $userId = $currentUser->ID;
         $userName = $currentUser->display_name;
         
+        // Check cache first (5 minute cache)
+        $cacheKey = 'praisonpress_user_submissions_' . $userId;
+        $userPRs = wp_cache_get($cacheKey, 'praisonpress');
+        
+        if ($userPRs !== false) {
+            // Return cached data
+            ob_start();
+            $this->renderSubmissions($userPRs, $userName);
+            return ob_get_clean();
+        }
+        
         // Get user's submissions from database
         require_once PRAISON_PLUGIN_DIR . '/src/Database/SubmissionsTable.php';
         $submissionsTable = new \PraisonPress\Database\SubmissionsTable();
@@ -100,7 +111,18 @@ class MySubmissionsPage {
             }
         }
         
+        // Cache the results for 5 minutes
+        wp_cache_set($cacheKey, $userPRs, 'praisonpress', 300);
+        
         ob_start();
+        $this->renderSubmissions($userPRs, $userName);
+        return ob_get_clean();
+    }
+    
+    /**
+     * Render submissions list
+     */
+    private function renderSubmissions($userPRs, $userName) {
         ?>
         <div class="praisonpress-my-submissions">
             <div class="praisonpress-submissions-header">

@@ -125,21 +125,17 @@
                             message += '\n\nView pull request: ' + response.data.pr_url;
                             
                             // Show success with link
-                            const prLink = '<a href="' + response.data.pr_url + '" target="_blank" style="color: #0073aa; text-decoration: underline;">View Pull Request #' + response.data.pr_number + '</a>';
+                            const submissionsLink = '<a href="/submissions/" style="color: #0073aa; text-decoration: underline;">View Your Submissions</a>';
                             const successHtml = '<div style="padding: 20px; text-align: center;">' +
                                 '<h3 style="color: #00a32a; margin-bottom: 10px;">✅ Pull Request Created!</h3>' +
                                 '<p>' + response.data.message + '</p>' +
-                                '<p style="margin-top: 15px;">' + prLink + '</p>' +
+                                '<p style="margin-top: 15px;">PR #' + response.data.pr_number + ' has been submitted for review.</p>' +
+                                '<p style="margin-top: 15px;">' + submissionsLink + '</p>' +
                                 '<p style="margin-top: 15px; font-size: 14px; color: #666;">An admin will review your changes soon.</p>' +
                                 '</div>';
                             
-                            $('.praisonpress-modal-body').html(successHtml + '<p style="margin-top: 15px; color: #666; font-style: italic;">Redirecting to Submissions page in 2 seconds...</p>');
+                            $('.praisonpress-modal-body').html(successHtml);
                             $('.praisonpress-modal-footer').hide();
-                            
-                            // Redirect to Submissions page after 2 seconds
-                            setTimeout(function() {
-                                window.location.href = '/submissions/';
-                            }, 2000);
                         } else {
                             showErrorModal('Success', message);
                             setTimeout(function() {
