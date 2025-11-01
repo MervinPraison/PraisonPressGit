@@ -29,6 +29,31 @@ post_types[] = "chords"
 post_types[] = "articles"
 
 ; ============================================================================
+; GITHUB INTEGRATION (Optional)
+; ============================================================================
+; Configure GitHub repository for collaborative content management
+; Leave empty to use local Git only (no remote sync or pull requests)
+
+[github]
+; GitHub repository URL (e.g., https://github.com/username/repo or git@github.com:username/repo.git)
+repository_url = ""
+
+; GitHub OAuth App credentials (create at https://github.com/settings/developers)
+; Required for pull request creation and private repository access
+client_id = ""
+client_secret = ""
+
+; Branch to sync with (usually 'main' or 'master')
+main_branch = "main"
+
+; Auto-sync: Automatically pull changes from remote repository
+; Options: 'webhook' (recommended), 'polling', 'manual'
+auto_sync = "manual"
+
+; Polling interval in minutes (only used if auto_sync = 'polling')
+polling_interval = 5
+
+; ============================================================================
 ; CACHE SETTINGS
 ; ============================================================================
 [cache]

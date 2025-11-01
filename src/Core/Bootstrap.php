@@ -483,6 +483,117 @@ status: "publish"
                 }
                 ?>
             </div>
+            
+            <!-- GitHub Integration -->
+            <div class="card" style="max-width: 800px; margin-top: 20px;">
+                <h2>🐙 GitHub Integration</h2>
+                <?php
+                require_once PRAISON_PLUGIN_DIR . '/src/GitHub/OAuthHandler.php';
+                require_once PRAISON_PLUGIN_DIR . '/src/GitHub/GitHubClient.php';
+                
+                // Use default PraisonPress OAuth app or custom from config
+                // Note: This is a public client ID for PraisonPress plugin
+                // Users can override with their own in site-config.ini
+                $defaultClientId = 'Ov23liyeSqePhyWRSHlv'; // PraisonPress WordPress Plugin OAuth app
+                $clientId = isset($config['github']['client_id']) ? $config['github']['client_id'] : $defaultClientId;
+                $clientSecret = isset($config['github']['client_secret']) ? $config['github']['client_secret'] : null;
+                
+                $oauth = new \PraisonPress\GitHub\OAuthHandler($clientId, $clientSecret);
+                
+                // Handle OAuth callback
+                if (isset($_GET['action']) && $_GET['action'] === 'github-callback' && isset($_GET['code'])) {
+                    $code = sanitize_text_field($_GET['code']);
+                    $tokenData = $oauth->getAccessToken($code);
+                    
+                    if ($tokenData && isset($tokenData['access_token'])) {
+                        $oauth->storeAccessToken($tokenData['access_token']);
+                        echo '<div class="notice notice-success"><p>✅ Successfully connected to GitHub!</p></div>';
+                    } else {
+                        echo '<div class="notice notice-error"><p>❌ Failed to connect to GitHub. Please try again.</p></div>';
+                    }
+                }
+                
+                // Handle disconnect
+                if (isset($_GET['action']) && $_GET['action'] === 'github-disconnect' && check_admin_referer('github_disconnect')) {
+                    $oauth->deleteAccessToken();
+                    echo '<div class="notice notice-success"><p>✅ Disconnected from GitHub.</p></div>';
+                }
+                
+                $isConnected = $oauth->isConnected();
+                $hasConfig = !empty($config['github']['client_id']) && !empty($config['github']['client_secret']);
+                $repoUrl = isset($config['github']['repository_url']) ? $config['github']['repository_url'] : '';
+                ?>
+                
+                <?php if (!$hasConfig): ?>
+                    <div class="notice notice-info">
+                        <p><strong>ℹ️ Quick Setup</strong></p>
+                        <p>To enable collaborative features (pull requests, auto-sync):</p>
+                        <ol>
+                            <li><strong>Add your repository URL</strong> to <code>site-config.ini</code>:
+                                <pre style="background: #f0f0f1; padding: 10px; margin: 10px 0;">[github]
+repository_url = "https://github.com/MervinPraison/PraisonPressContent"</pre>
+                            </li>
+                            <li><strong>Click "Connect to GitHub"</strong> below to authorize access</li>
+                        </ol>
+                        <p><small><strong>Note:</strong> PraisonPress uses a shared OAuth app for easy setup. For production sites, you can <a href="https://github.com/settings/developers" target="_blank">create your own OAuth app</a> and add the credentials to <code>site-config.ini</code>.</small></p>
+                    </div>
+                <?php elseif (!$isConnected): ?>
+                    <p><strong>Status:</strong> <span style="color: #d63638;">⚫ Not Connected</span></p>
+                    <?php if (!empty($repoUrl)): ?>
+                        <p><strong>Repository:</strong> <code><?php echo esc_html($repoUrl); ?></code></p>
+                    <?php endif; ?>
+                    <p>Connect your GitHub account to enable pull request creation and repository access.</p>
+                    <p>
+                        <a href="<?php echo esc_url($oauth->getAuthorizationUrl(['repo'])); ?>" class="button button-primary">
+                            🔗 Connect to GitHub
+                        </a>
+                    </p>
+                    <p><small>This will redirect you to GitHub to authorize the application. You'll need access to the repository configured in <code>site-config.ini</code>.</small></p>
+                <?php else: ?>
+                    <?php
+                    // Test connection
+                    $token = $oauth->getStoredAccessToken();
+                    $client = new \PraisonPress\GitHub\GitHubClient($token);
+                    $userTest = $client->testConnection();
+                    ?>
+                    <p><strong>Status:</strong> <span style="color: #00a32a;">🟢 Connected</span></p>
+                    <?php if ($userTest['success'] && isset($userTest['data']['login'])): ?>
+                        <p><strong>GitHub User:</strong> <?php echo esc_html($userTest['data']['login']); ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($repoUrl)): ?>
+                        <p><strong>Repository:</strong> <code><?php echo esc_html($repoUrl); ?></code></p>
+                        <?php
+                        // Test repository access
+                        $repoInfo = \PraisonPress\GitHub\GitHubClient::parseRepositoryUrl($repoUrl);
+                        if ($repoInfo) {
+                            $repoTest = $client->getRepository($repoInfo['owner'], $repoInfo['repo']);
+                            if ($repoTest['success']) {
+                                echo '<p style="color: #00a32a;">✅ Repository access confirmed</p>';
+                                if (isset($repoTest['data']['private']) && $repoTest['data']['private']) {
+                                    echo '<p><small>🔒 Private repository</small></p>';
+                                }
+                            } else {
+                                echo '<p style="color: #d63638;">❌ Cannot access repository: ' . esc_html($repoTest['error']) . '</p>';
+                            }
+                        }
+                        ?>
+                    <?php endif; ?>
+                    <p>
+                        <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=praisonpress-settings&action=github-disconnect'), 'github_disconnect')); ?>" class="button">
+                            🔌 Disconnect GitHub
+                        </a>
+                    </p>
+                <?php endif; ?>
+                
+                <?php if (!$hasConfig || empty($repoUrl)): ?>
+                    <hr>
+                    <h3>Default Behavior (No GitHub)</h3>
+                    <p>✅ Plugin works with <strong>local Git only</strong></p>
+                    <p>✅ Version history tracks local changes</p>
+                    <p>❌ No remote sync or pull requests</p>
+                    <p>❌ No collaborative editing features</p>
+                <?php endif; ?>
+            </div>
         </div>
         <?php
     }
