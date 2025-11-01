@@ -114,6 +114,17 @@ class PullRequestsPage {
                 </a>
             </h2>
             
+            <?php
+            // Show success messages
+            if (isset($_GET['merged']) && $_GET['merged'] === '1' && isset($_GET['pr'])) {
+                $mergedPR = intval($_GET['pr']);
+                echo '<div class="notice notice-success is-dismissible"><p>Pull request #' . esc_html($mergedPR) . ' has been merged successfully!</p></div>';
+            }
+            if (isset($_GET['closed']) && $_GET['closed'] === '1') {
+                echo '<div class="notice notice-success is-dismissible"><p>Pull request has been closed successfully!</p></div>';
+            }
+            ?>
+            
             <?php if (empty($this->repoOwner) || empty($this->repoName)): ?>
                 <div class="notice notice-error">
                     <p>GitHub repository not configured. Please configure in <a href="<?php echo esc_url(admin_url('admin.php?page=praisonpress-settings')); ?>">Settings</a>.</p>
@@ -662,10 +673,17 @@ class PullRequestsPage {
             // Auto-sync after successful close
             $this->triggerAutoSync();
             
-            wp_send_json_success([
-                'message' => 'Pull request closed successfully! Content synced from GitHub.',
-                'redirect' => admin_url('admin.php?page=praisonpress-pull-requests')
-            ]);
+            // Update PR status in database
+            require_once PRAISON_PLUGIN_DIR . '/src/Database/SubmissionsTable.php';
+            $submissionsTable = new \PraisonPress\Database\SubmissionsTable();
+            $submissionsTable->updateStatus($prNumber, 'closed');
+            
+            // Redirect back to PR list with success message
+            wp_redirect(add_query_arg([
+                'page' => 'praisonpress-pull-requests',
+                'closed' => '1'
+            ], admin_url('admin.php')));
+            exit;
         } else {
             wp_redirect(add_query_arg([
                 'page' => 'praisonpress-pull-requests',
@@ -698,6 +716,12 @@ class PullRequestsPage {
                     
                     if ($result) {
                         error_log('PraisonPress: Auto-sync successful after PR merge');
+                        
+                        // Clear all content cache to show updated content
+                        require_once PRAISON_PLUGIN_DIR . '/src/Cache/CacheManager.php';
+                        \PraisonPress\Cache\CacheManager::clearAll();
+                        error_log('PraisonPress: Cache cleared after sync');
+                        
                         return true;
                     } else {
                         error_log('PraisonPress: Auto-sync failed');

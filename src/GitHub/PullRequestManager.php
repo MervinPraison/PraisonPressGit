@@ -298,6 +298,14 @@ class PullRequestManager {
         }
         
         if (isset($prData['html_url'])) {
+            // Save submission to database for tracking
+            $this->saveSubmissionToDatabase(
+                $prData['number'],
+                $prData['html_url'],
+                isset($postData['post_id']) ? $postData['post_id'] : null,
+                isset($postData['title']) ? $postData['title'] : null
+            );
+            
             return [
                 'success' => true,
                 'message' => 'Pull request created successfully',

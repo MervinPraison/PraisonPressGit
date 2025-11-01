@@ -12,7 +12,9 @@ class MySubmissionsPage {
     private $githubClient;
     
     public function __construct() {
-        $this->githubClient = new GitHubClient();
+        // Load GitHub access token from WordPress options
+        $accessToken = get_option('praisonpress_github_token', '');
+        $this->githubClient = new GitHubClient($accessToken);
     }
     
     /**
@@ -85,9 +87,18 @@ class MySubmissionsPage {
                 
                 foreach ($userSubmissions as $submission) {
                     // Get PR details from GitHub
-                    $prDetails = $this->githubClient->getPullRequest($owner, $repo, $submission->pr_number);
+                    $prResponse = $this->githubClient->getPullRequest($owner, $repo, $submission->pr_number);
                     
-                    if ($prDetails) {
+                    // Unwrap the response (GitHubClient wraps it in success/data)
+                    $prDetails = null;
+                    if (isset($prResponse['success']) && $prResponse['success'] && isset($prResponse['data'])) {
+                        $prDetails = $prResponse['data'];
+                    } elseif (isset($prResponse['number'])) {
+                        // Already unwrapped
+                        $prDetails = $prResponse;
+                    }
+                    
+                    if ($prDetails && isset($prDetails['number'])) {
                         // Add database info to PR data
                         $prDetails['db_id'] = $submission->id;
                         $prDetails['db_post_title'] = $submission->post_title;
@@ -164,9 +175,13 @@ class MySubmissionsPage {
                         <div class="praisonpress-submission-item">
                             <div class="submission-header">
                                 <h3 class="submission-title">
-                                    <a href="<?php echo esc_url($prUrl); ?>" target="_blank" rel="noopener">
+                                    <?php if (current_user_can('manage_options')): ?>
+                                        <a href="<?php echo esc_url($prUrl); ?>" target="_blank" rel="noopener">
+                                            <?php echo $prTitle; ?>
+                                        </a>
+                                    <?php else: ?>
                                         <?php echo $prTitle; ?>
-                                    </a>
+                                    <?php endif; ?>
                                 </h3>
                                 <span class="submission-status <?php echo $statusClass; ?>">
                                     <?php echo $statusLabel; ?>
@@ -188,6 +203,5 @@ class MySubmissionsPage {
             <?php endif; ?>
         </div>
         <?php
-        return ob_get_clean();
     }
 }
