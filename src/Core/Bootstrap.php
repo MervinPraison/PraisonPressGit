@@ -202,6 +202,14 @@ class Bootstrap {
             return $this->postLoaders[$post_type]->loadPosts($query);
         }
         
+        // Dynamic loader creation: If post type directory exists but no loader, create one
+        $post_type_dir = PRAISON_CONTENT_DIR . '/' . $post_type;
+        if (is_dir($post_type_dir)) {
+            // Create PostLoader on-the-fly for this post type
+            $this->postLoaders[$post_type] = new \PraisonPress\Loaders\PostLoader($post_type);
+            return $this->postLoaders[$post_type]->loadPosts($query);
+        }
+        
         return $posts;
     }
     
