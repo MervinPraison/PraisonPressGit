@@ -830,3 +830,23 @@ Your content here...
 ---
 
 **Made with ❤️ for WordPress developers who love Git and Markdown**
+
+---
+
+## GitHub OAuth Setup for Production
+
+**Important**: Each WordPress site needs its own GitHub OAuth App!
+
+For detailed instructions on setting up GitHub OAuth for your site, see:
+
+📖 **[GITHUB_OAUTH_SETUP.md](GITHUB_OAUTH_SETUP.md)**
+
+### Quick Start
+
+1. **Create GitHub OAuth App**: https://github.com/settings/developers
+2. **Set Redirect URL**: `https://yoursite.com/wp-admin/admin.php?page=praisonpress-settings&oauth=callback`
+3. **Configure Plugin**: Add Client ID and Secret to `site-config.ini`
+4. **Connect**: Click "Connect to GitHub" in WordPress admin
+
+See the full guide for detailed step-by-step instructions.
+
