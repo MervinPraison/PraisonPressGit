@@ -24,6 +24,7 @@
     function startExport() {
         const postType = $('#post-type-select').val();
         const batchSize = $('#batch-size').val();
+        const pushToGithub = $('#push-to-github').is(':checked') ? '1' : '0';
         
         // Show progress section
         $('#export-config').hide();
@@ -38,7 +39,8 @@
                 action: 'praison_start_export',
                 nonce: praisonExport.nonce,
                 post_type: postType,
-                batch_size: batchSize
+                batch_size: batchSize,
+                push_to_github: pushToGithub
             },
             success: function(response) {
                 if (response.success) {
@@ -138,6 +140,20 @@
         $('#result-processed').text(data.processed);
         $('#result-successful').text(data.successful);
         $('#result-failed').text(data.failed);
+        
+        // Show GitHub push status if available
+        if (data.github_push) {
+            let pushHtml = '<div style="margin-top: 15px; padding: 10px; border-left: 4px solid ';
+            if (data.github_push.success) {
+                pushHtml += '#46b450; background: #ecf7ed;">';
+                pushHtml += '<strong style="color: #46b450;">✓ GitHub Push:</strong> ';
+            } else {
+                pushHtml += '#dc3232; background: #f9e2e2;">';
+                pushHtml += '<strong style="color: #dc3232;">✗ GitHub Push Failed:</strong> ';
+            }
+            pushHtml += data.github_push.message + '</div>';
+            $('#export-complete .praison-card').append(pushHtml);
+        }
     }
     
     function cancelExport() {

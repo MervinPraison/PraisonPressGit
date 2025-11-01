@@ -75,6 +75,19 @@ if (!defined('ABSPATH')) exit;
                 </tr>
                 
                 <tr>
+                    <th scope="row"><?php echo esc_html__('Push to GitHub', 'praisonpress'); ?></th>
+                    <td>
+                        <label>
+                            <input type="checkbox" id="push-to-github" name="push_to_github" value="1" />
+                            <?php echo esc_html__('Automatically push exported files to GitHub after export completes', 'praisonpress'); ?>
+                        </label>
+                        <p class="description">
+                            <?php echo esc_html__('Commits all exported files with message "Exported N posts to Markdown" and pushes to the configured repository', 'praisonpress'); ?>
+                        </p>
+                    </td>
+                </tr>
+                
+                <tr>
                     <th scope="row"><?php echo esc_html__('Total Posts', 'praisonpress'); ?></th>
                     <td>
                         <strong id="total-posts-count">

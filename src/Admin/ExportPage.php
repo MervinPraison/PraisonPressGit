@@ -87,6 +87,7 @@ class ExportPage {
         
         $post_type = isset($_POST['post_type']) ? sanitize_text_field($_POST['post_type']) : 'all';
         $batch_size = isset($_POST['batch_size']) ? intval($_POST['batch_size']) : 100;
+        $push_to_github = isset($_POST['push_to_github']) && $_POST['push_to_github'] === '1';
         
         // Get total posts to export
         if ($post_type === 'all') {
@@ -145,8 +146,14 @@ class ExportPage {
             
             $processed = $successful + $failed;
             
+            // Push to GitHub if requested
+            $github_push = null;
+            if ($push_to_github) {
+                $github_push = $this->pushToGitHub($successful);
+            }
+            
             // Return immediate success for small exports
-            wp_send_json_success([
+            $response = [
                 'job_id' => 'sync_' . time(),
                 'total_posts' => $total_posts,
                 'processed' => $processed,
@@ -155,7 +162,13 @@ class ExportPage {
                 'status' => 'completed',
                 'progress' => $total_posts > 0 ? round(($processed / $total_posts) * 100) : 100,
                 'message' => sprintf('Export completed! %d posts exported successfully.', $successful)
-            ]);
+            ];
+            
+            if ($github_push) {
+                $response['github_push'] = $github_push;
+            }
+            
+            wp_send_json_success($response);
             return;
         }
         
@@ -176,6 +189,7 @@ class ExportPage {
             'current_page' => 1,
             'started_at' => current_time('mysql'),
             'updated_at' => current_time('mysql'),
+            'push_to_github' => $push_to_github,
         ];
         
         set_transient('praison_export_' . $job_id, $job_data, DAY_IN_SECONDS);
@@ -295,7 +309,7 @@ class ExportPage {
             ? round(($job_data['processed'] / $job_data['total_posts']) * 100, 1)
             : 0;
         
-        wp_send_json_success([
+        $response = [
             'status' => $job_data['status'],
             'progress' => $progress,
             'processed' => $job_data['processed'],
@@ -304,7 +318,13 @@ class ExportPage {
             'failed' => $job_data['failed'],
             'current_type' => $job_data['current_type'],
             'updated_at' => $job_data['updated_at'],
-        ]);
+        ];
+        
+        if (isset($job_data['github_push'])) {
+            $response['github_push'] = $job_data['github_push'];
+        }
+        
+        wp_send_json_success($response);
     }
     
     /**
@@ -347,3 +367,88 @@ class ExportPage {
         include plugin_dir_path(dirname(dirname(__FILE__))) . 'views/export-page.php';
     }
 }
+    /**
+     * Push exported files to GitHub
+     * 
+     * @param int $post_count Number of posts exported
+     * @return array Result with success status and message
+     */
+    private function pushToGitHub($post_count) {
+        try {
+            require_once PRAISON_PLUGIN_DIR . '/src/Git/GitManager.php';
+            require_once PRAISON_PLUGIN_DIR . '/src/GitHub/SyncManager.php';
+            
+            $contentDir = PRAISON_CONTENT_DIR;
+            
+            // Initialize Git manager
+            $gitManager = new \PraisonPress\Git\GitManager($contentDir);
+            
+            // Check if Git is initialized
+            if (!$gitManager->isGitRepo()) {
+                return [
+                    'success' => false,
+                    'message' => 'Content directory is not a Git repository'
+                ];
+            }
+            
+            // Add all changes
+            $gitManager->add('.');
+            
+            // Check if there are changes to commit
+            $status = $gitManager->status();
+            if (strpos($status, 'nothing to commit') !== false) {
+                return [
+                    'success' => true,
+                    'message' => 'No changes to push (all files already in sync)'
+                ];
+            }
+            
+            // Commit changes
+            $commitMessage = sprintf('Exported %d posts to Markdown', $post_count);
+            $gitManager->commit($commitMessage);
+            
+            // Push to remote
+            $config_file = PRAISON_PLUGIN_DIR . '/site-config.ini';
+            if (file_exists($config_file)) {
+                $config = parse_ini_file($config_file, true);
+                $repoUrl = isset($config['github']['repository_url']) ? $config['github']['repository_url'] : '';
+                $mainBranch = isset($config['github']['main_branch']) ? $config['github']['main_branch'] : 'main';
+                
+                if ($repoUrl) {
+                    $syncManager = new \PraisonPress\GitHub\SyncManager($repoUrl, $mainBranch);
+                    $syncManager->setupRemote();
+                    
+                    // Push to remote
+                    $pushResult = $gitManager->push('origin', $mainBranch);
+                    
+                    if ($pushResult) {
+                        return [
+                            'success' => true,
+                            'message' => sprintf('Successfully pushed %d exported posts to GitHub', $post_count)
+                        ];
+                    } else {
+                        return [
+                            'success' => false,
+                            'message' => 'Failed to push to GitHub. Check error logs for details.'
+                        ];
+                    }
+                } else {
+                    return [
+                        'success' => false,
+                        'message' => 'GitHub repository URL not configured'
+                    ];
+                }
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Site configuration file not found'
+                ];
+            }
+        } catch (\Exception $e) {
+            error_log('PraisonPress Export: GitHub push failed: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error pushing to GitHub: ' . $e->getMessage()
+            ];
+        }
+    }
