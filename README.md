@@ -54,6 +54,57 @@
 - **Git Integration**: Built for version control workflows
 - **API Ready**: Programmatic access to all features
 
+---
+
+## 🔄 Content Management Workflows
+
+PraisonPressGit supports two flexible workflows to fit your team's needs:
+
+### Option 1: Admin → Files (Hybrid Approach)
+
+```
+1. Create posts in WordPress admin
+2. Use Export feature to convert to .md files
+3. Commit files to Git
+4. Deploy to production
+```
+
+**Best for:**
+- Teams familiar with WordPress
+- Content editors who prefer GUI
+- Gradual migration to file-based content
+
+### Option 2: Files → Frontend (Pure Git Workflow)
+
+```
+1. Create .md files directly in /content/
+2. Files automatically appear on frontend
+3. Commit to Git
+4. Deploy
+```
+
+**Best for:**
+- Developers and technical writers
+- Git-first workflows
+- JAMstack architectures
+- CI/CD pipelines
+
+### Best of Both Worlds! ✅
+
+You can mix and match both workflows:
+- Use admin for quick edits and drafts
+- Export to files for version control
+- Create files directly for new content
+- All content accessible on frontend
+
+**Key Benefits:**
+- 📝 Flexibility: Choose the workflow that fits each task
+- 🔄 Reversible: Export admin posts to files anytime
+- 🚀 Scalable: File-based content performs better at scale
+- 📊 Trackable: Full Git history for all file-based content
+
+---
+
 ## Installation
 
 ### Via WordPress.org (Recommended)
