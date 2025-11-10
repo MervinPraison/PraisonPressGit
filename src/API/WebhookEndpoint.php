@@ -65,7 +65,7 @@ class WebhookEndpoint {
         $payload = $request->get_json_params();
         
         // Log webhook event
-        error_log('PraisonPress: Received GitHub webhook event: ' . $event);
+        // error_log('PraisonPress: Received GitHub webhook event: ' . $event);
         
         // Handle push event
         if ($event === 'push') {
@@ -131,7 +131,7 @@ class WebhookEndpoint {
         $prNumber = isset($payload['pull_request']['number']) ? $payload['pull_request']['number'] : 0;
         
         // Log for now (will implement PR review UI later)
-        error_log('PraisonPress: Pull request ' . $action . ' #' . $prNumber);
+        // error_log('PraisonPress: Pull request ' . $action . ' #' . $prNumber);
         
         return new \WP_REST_Response([
             'success' => true,

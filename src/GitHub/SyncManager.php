@@ -58,8 +58,8 @@ class SyncManager {
                 ];
             }
         } else {
-            // Create content directory
-            if (!mkdir($this->contentDir, 0755, true)) {
+            // Create content directory using WordPress filesystem API
+            if (!wp_mkdir_p($this->contentDir)) {
                 return [
                     'success' => false,
                     'message' => 'Failed to create content directory',

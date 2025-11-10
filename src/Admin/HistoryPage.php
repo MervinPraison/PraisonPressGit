@@ -18,10 +18,12 @@ class HistoryPage {
      * Render history page
      */
     public function render() {
-        // Check if viewing a specific commit
+        // Check if viewing a specific commit with nonce verification
         if (isset($_GET['action']) && $_GET['action'] === 'view' && isset($_GET['hash'])) {
-            $this->renderCommitDetails(sanitize_text_field($_GET['hash']));
-            return;
+            if (isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'view_commit')) {
+                $this->renderCommitDetails(sanitize_text_field(wp_unslash($_GET['hash'])));
+                return;
+            }
         }
         
         $history = $this->gitManager->getHistory(50);
@@ -31,12 +33,12 @@ class HistoryPage {
         <div class="wrap" style="max-width: 100%; margin-right: 0;">
             <h1>📜 Version History</h1>
             
-            <?php if (isset($_GET['rollback']) && $_GET['rollback'] === 'success'): ?>
+            <?php if (isset($_GET['rollback']) && isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'rollback_result') && sanitize_text_field(wp_unslash($_GET['rollback'])) === 'success'): ?>
                 <div class="notice notice-success is-dismissible">
                     <p><strong>✅ Rollback Successful!</strong></p>
                     <p>Content has been rolled back to the selected version.</p>
                 </div>
-            <?php elseif (isset($_GET['rollback']) && $_GET['rollback'] === 'error'): ?>
+            <?php elseif (isset($_GET['rollback']) && isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'rollback_result') && sanitize_text_field(wp_unslash($_GET['rollback'])) === 'error'): ?>
                 <div class="notice notice-error is-dismissible">
                     <p><strong>❌ Rollback Failed</strong></p>
                     <p>Unable to rollback to the selected version. Please try again.</p>

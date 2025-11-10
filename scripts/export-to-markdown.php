@@ -22,13 +22,13 @@
 // Load WordPress if not already loaded
 if (!defined('ABSPATH')) {
     // Try to find wp-load.php
-    $wp_load_paths = [
+    $praison_wp_load_paths = [
         __DIR__ . '/../../../../wp-load.php',
         __DIR__ . '/../../../wp-load.php',
         dirname(dirname(dirname(dirname(__DIR__)))) . '/wp-load.php',
     ];
     
-    foreach ($wp_load_paths as $path) {
+    foreach ($praison_wp_load_paths as $path) {
         if (file_exists($path)) {
             require_once $path;
             break;
@@ -46,7 +46,7 @@ if (!defined('ABSPATH')) {
  * @param string $html HTML content
  * @return string Markdown content
  */
-function html_to_markdown($html) {
+function praison_html_to_markdown($html) {
     // Basic HTML to Markdown conversion
     // For production, consider using a library like league/html-to-markdown
     
@@ -89,7 +89,7 @@ function html_to_markdown($html) {
     $markdown = preg_replace('/<br\s*\/?>/is', "\n", $markdown);
     
     // Remove remaining HTML tags
-    $markdown = strip_tags($markdown);
+    $markdown = wp_strip_all_tags($markdown);
     
     // Clean up whitespace
     $markdown = preg_replace('/\n{3,}/', "\n\n", $markdown);
@@ -229,21 +229,21 @@ function export_post_to_markdown($post, $output_dir) {
     
     $yaml .= "---\n\n";
     
-    // Convert content to Markdown
+    // Convert content to markdown if it's HTML
     $content = $post->post_content;
-    $markdown_content = html_to_markdown($content);
+    $markdown_content = praison_html_to_markdown($content);
     
     // Combine YAML and content
     $full_content = $yaml . $markdown_content;
     
     // Generate filename
-    $date_prefix = date('Y-m-d', strtotime($post->post_date));
+    $date_prefix = gmdate('Y-m-d', strtotime($post->post_date));
     $filename = $date_prefix . '-' . $post->post_name . '.md';
     $filepath = $output_dir . '/' . $filename;
     
     // Ensure output directory exists
     if (!is_dir($output_dir)) {
-        mkdir($output_dir, 0755, true);
+        wp_mkdir_p($output_dir);
     }
     
     // Write file
@@ -252,11 +252,11 @@ function export_post_to_markdown($post, $output_dir) {
     if ($result !== false) {
         // Only echo in CLI mode, not during AJAX
         if (defined('WP_CLI') && WP_CLI) {
-            echo "✅ Exported: {$filename} ({$post->post_type})\n";
+            echo esc_html("✅ Exported: {$filename} ({$post->post_type})") . "\n";
         }
         return true;
     } else {
-        echo "❌ Failed: {$filename}\n";
+        echo esc_html("❌ Failed: {$filename}") . "\n";
         return false;
     }
 }
@@ -273,8 +273,8 @@ function export_posts_to_markdown($post_type = 'post', $output_dir = null) {
     }
     
     echo "\n🚀 Starting export...\n";
-    echo "📝 Post Type: {$post_type}\n";
-    echo "📁 Output Directory: {$output_dir}\n\n";
+    echo esc_html("📝 Post Type: {$post_type}") . "\n";
+    echo esc_html("📁 Output Directory: {$output_dir}") . "\n\n";
     
     // Get all posts of this type
     $args = [
@@ -288,7 +288,7 @@ function export_posts_to_markdown($post_type = 'post', $output_dir = null) {
     $query = new WP_Query($args);
     
     if (!$query->have_posts()) {
-        echo "⚠️  No posts found for post type: {$post_type}\n";
+        echo esc_html("⚠️  No posts found for post type: {$post_type}") . "\n";
         return;
     }
     
@@ -296,7 +296,7 @@ function export_posts_to_markdown($post_type = 'post', $output_dir = null) {
     $success = 0;
     $failed = 0;
     
-    echo "📊 Found {$total} posts to export\n\n";
+    echo esc_html("📊 Found {$total} posts to export") . "\n\n";
     
     while ($query->have_posts()) {
         $query->the_post();
@@ -311,14 +311,14 @@ function export_posts_to_markdown($post_type = 'post', $output_dir = null) {
     
     wp_reset_postdata();
     
-    echo "\n" . str_repeat('=', 60) . "\n";
-    echo "✅ Export complete!\n\n";
-    echo "📊 Statistics:\n";
-    echo "   Total posts: {$total}\n";
-    echo "   Successful: {$success}\n";
-    echo "   Failed: {$failed}\n";
-    echo "   Output directory: {$output_dir}\n";
-    echo str_repeat('=', 60) . "\n";
+    echo "\n" . esc_html(str_repeat('=', 60)) . "\n";
+    echo esc_html("✅ Export complete!") . "\n\n";
+    echo esc_html(str_repeat('=', 50)) . "\n";
+    echo esc_html("   Total posts: {$total}") . "\n";
+    echo esc_html("   Successful: {$success}") . "\n";
+    echo esc_html("   Failed: {$failed}") . "\n";
+    echo esc_html("   Output directory: {$output_dir}") . "\n";
+    echo esc_html(str_repeat('=', 50)) . "\n";
 }
 
 /**
@@ -330,7 +330,7 @@ function export_all_post_types($base_output_dir = null) {
     }
     
     echo "\n🚀 Exporting ALL post types...\n";
-    echo "📁 Base output directory: {$base_output_dir}\n\n";
+    echo esc_html("📁 Base output directory: {$base_output_dir}") . "\n\n";
     
     // Get all public post types
     $post_types = get_post_types(['public' => true], 'objects');
@@ -346,15 +346,15 @@ function export_all_post_types($base_output_dir = null) {
         
         $output_dir = $base_output_dir . '/' . $post_type->name;
         
-        echo "\n" . str_repeat('-', 60) . "\n";
-        echo "📝 Processing: {$post_type->label} ({$post_type->name})\n";
-        echo str_repeat('-', 60) . "\n";
+        echo "\n" . esc_html(str_repeat('-', 50)) . "\n";
+        echo esc_html("📝 Processing: {$post_type->label} ({$post_type->name})") . "\n";
+        echo esc_html(str_repeat('-', 50)) . "\n";
         
         ob_start();
         export_posts_to_markdown($post_type->name, $output_dir);
         $output = ob_get_clean();
         
-        echo $output;
+        echo esc_html($output);
         
         // Count exports
         preg_match('/Successful: (\d+)/', $output, $matches);
@@ -365,15 +365,15 @@ function export_all_post_types($base_output_dir = null) {
     }
     
     echo "\n\n";
-    echo str_repeat('=', 60) . "\n";
-    echo "✅ ALL EXPORTS COMPLETE!\n\n";
-    echo "📊 Summary:\n";
+    echo esc_html(str_repeat('=', 60)) . "\n";
+    echo esc_html(str_repeat('=', 50)) . "\n";
+    echo "\n📊 Export Summary:\n";
     foreach ($results as $type => $count) {
-        echo "   {$type}: {$count} posts\n";
+        echo esc_html("   {$type}: {$count} posts") . "\n";
     }
-    echo "\n   Total: {$total_exported} posts exported\n";
-    echo "   Output directory: {$base_output_dir}\n";
-    echo str_repeat('=', 60) . "\n";
+    echo esc_html("\n   Total: {$total_exported} posts exported") . "\n";
+    echo esc_html("   Output directory: {$base_output_dir}") . "\n";
+    echo esc_html(str_repeat('=', 50)) . "\n";
     
     return $results;
 }
@@ -391,8 +391,8 @@ if (php_sapi_name() === 'cli' && isset($argc)) {
     } else {
         // Arguments provided - export specific post type
         $post_type = isset($argv[1]) ? $argv[1] : 'post';
-        $output_dir = isset($argv[2]) ? $argv[2] : WP_CONTENT_DIR . '/../content/' . $post_type;
+        $praison_output_dir = isset($argv[2]) ? $argv[2] : WP_CONTENT_DIR . '/../content/' . $post_type;
         
-        export_posts_to_markdown($post_type, $output_dir);
+        export_posts_to_markdown($post_type, $praison_output_dir);
     }
 }

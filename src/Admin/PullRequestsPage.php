@@ -53,7 +53,7 @@ class PullRequestsPage {
      */
     public function addAdminMenu() {
         add_submenu_page(
-            'praisonpress',
+            'praisonpressgit',
             'Pull Requests',
             'Pull Requests',
             'manage_options',
@@ -68,8 +68,11 @@ class PullRequestsPage {
     public function renderPage() {
         // Check if viewing single PR
         if (isset($_GET['pr']) && !empty($_GET['pr'])) {
-            $this->renderPRDetail(intval($_GET['pr']));
-            return;
+            // Nonce verification for single PR view
+            if (isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'view_pr')) {
+                $this->renderPRDetail(intval($_GET['pr']));
+                return;
+            }
         }
         
         // List all PRs
@@ -80,8 +83,14 @@ class PullRequestsPage {
      * Render PR list
      */
     private function renderPRList() {
-        // Get current state filter
-        $state = isset($_GET['state']) ? sanitize_text_field($_GET['state']) : 'open';
+        // Get current state filter with nonce verification
+        $state = 'open';
+        if (isset($_GET['state'])) {
+            // Nonce verification for state filter
+            if (isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'filter_prs')) {
+                $state = sanitize_text_field(wp_unslash($_GET['state']));
+            }
+        }
         if (!in_array($state, ['open', 'closed', 'all'])) {
             $state = 'open';
         }
@@ -90,12 +99,12 @@ class PullRequestsPage {
         $prs = $this->getPullRequests($state);
         
         // Debug: Show raw response
-        if (isset($_GET['debug']) && $_GET['debug'] === '1') {
-            echo '<div class="notice notice-info"><pre>';
-            echo 'Repository: ' . esc_html($this->repoOwner . '/' . $this->repoName) . "\n";
-            echo 'Response: ' . esc_html(print_r($prs, true));
-            echo '</pre></div>';
-        }
+        // if (isset($_GET['debug']) && $_GET['debug'] === '1') {
+        //     echo '<div class="notice notice-info"><pre>';
+        //     echo 'Repository: ' . esc_html($this->repoOwner . '/' . $this->repoName) . "\n";
+        //     echo 'Response: ' . esc_html(print_r($prs, true));
+        //     echo '</pre></div>';
+        // }
         
         ?>
         <div class="wrap">
@@ -103,25 +112,29 @@ class PullRequestsPage {
             
             <!-- State Filter Tabs -->
             <h2 class="nav-tab-wrapper">
-                <a href="?page=praisonpress-pull-requests&state=open" class="nav-tab <?php echo $state === 'open' ? 'nav-tab-active' : ''; ?>">
+                <a href="<?php echo esc_url(wp_nonce_url('?page=praisonpress-pull-requests&state=open', 'filter_prs')); ?>" class="nav-tab <?php echo $state === 'open' ? 'nav-tab-active' : ''; ?>">
                     Open
                 </a>
-                <a href="?page=praisonpress-pull-requests&state=closed" class="nav-tab <?php echo $state === 'closed' ? 'nav-tab-active' : ''; ?>">
+                <a href="<?php echo esc_url(wp_nonce_url('?page=praisonpress-pull-requests&state=closed', 'filter_prs')); ?>" class="nav-tab <?php echo $state === 'closed' ? 'nav-tab-active' : ''; ?>">
                     Closed
                 </a>
-                <a href="?page=praisonpress-pull-requests&state=all" class="nav-tab <?php echo $state === 'all' ? 'nav-tab-active' : ''; ?>">
+                <a href="<?php echo esc_url(wp_nonce_url('?page=praisonpress-pull-requests&state=all', 'filter_prs')); ?>" class="nav-tab <?php echo $state === 'all' ? 'nav-tab-active' : ''; ?>">
                     All
                 </a>
             </h2>
             
             <?php
-            // Show success messages
+            // Show success messages with nonce verification
             if (isset($_GET['merged']) && $_GET['merged'] === '1' && isset($_GET['pr'])) {
-                $mergedPR = intval($_GET['pr']);
-                echo '<div class="notice notice-success is-dismissible"><p>Pull request #' . esc_html($mergedPR) . ' has been merged successfully!</p></div>';
+                if (isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'pr_action')) {
+                    $mergedPR = intval($_GET['pr']);
+                    echo '<div class="notice notice-success is-dismissible"><p>Pull request #' . esc_html($mergedPR) . ' has been merged successfully!</p></div>';
+                }
             }
             if (isset($_GET['closed']) && $_GET['closed'] === '1') {
-                echo '<div class="notice notice-success is-dismissible"><p>Pull request has been closed successfully!</p></div>';
+                if (isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'pr_action')) {
+                    echo '<div class="notice notice-success is-dismissible"><p>Pull request has been closed successfully!</p></div>';
+                }
             }
             ?>
             
@@ -264,7 +277,7 @@ class PullRequestsPage {
                     </tr>
                     <tr>
                         <th>Created:</th>
-                        <td><?php echo esc_html(date('Y-m-d H:i:s', strtotime($pr['created_at']))); ?></td>
+                        <td><?php echo esc_html(gmdate('Y-m-d H:i:s', strtotime($pr['created_at']))); ?></td>
                     </tr>
                     <tr>
                         <th>Branch:</th>
@@ -552,7 +565,7 @@ class PullRequestsPage {
         $response = $this->githubClient->get($endpoint);
         
         // Debug: Log the response
-        error_log('PR List Response: ' . print_r($response, true));
+        // error_log('PR List Response: ' . print_r($response, true));
         
         // Unwrap the response (GitHubClient wraps it in success/data)
         if (isset($response['success']) && $response['success'] && isset($response['data'])) {
@@ -638,14 +651,14 @@ class PullRequestsPage {
             // Auto-sync after successful merge
             $this->triggerAutoSync();
             
-            wp_redirect(add_query_arg([
+            wp_safe_redirect(add_query_arg([
                 'page' => 'praisonpress-pull-requests',
                 'merged' => '1',
             ], admin_url('admin.php')));
             exit;
         }
         
-        wp_redirect(add_query_arg([
+        wp_safe_redirect(add_query_arg([
             'page' => 'praisonpress-pull-requests',
             'pr' => $prNumber,
             'error' => 'merge_failed',
@@ -679,13 +692,13 @@ class PullRequestsPage {
             $submissionsTable->updateStatus($prNumber, 'closed');
             
             // Redirect back to PR list with success message
-            wp_redirect(add_query_arg([
+            wp_safe_redirect(add_query_arg([
                 'page' => 'praisonpress-pull-requests',
                 'closed' => '1'
             ], admin_url('admin.php')));
             exit;
         } else {
-            wp_redirect(add_query_arg([
+            wp_safe_redirect(add_query_arg([
                 'page' => 'praisonpress-pull-requests',
                 'pr' => $prNumber,
                 'error' => 'close_failed',
@@ -715,21 +728,21 @@ class PullRequestsPage {
                     $result = $syncManager->pullFromRemote();
                     
                     if ($result) {
-                        error_log('PraisonPress: Auto-sync successful after PR merge');
+                        // error_log('PraisonPress: Auto-sync successful after PR merge');
                         
                         // Clear all content cache to show updated content
                         require_once PRAISON_PLUGIN_DIR . '/src/Cache/CacheManager.php';
                         \PraisonPress\Cache\CacheManager::clearAll();
-                        error_log('PraisonPress: Cache cleared after sync');
+                        // error_log('PraisonPress: Cache cleared after sync');
                         
                         return true;
                     } else {
-                        error_log('PraisonPress: Auto-sync failed');
+                        // error_log('PraisonPress: Auto-sync failed');
                     }
                 }
             }
         } catch (\Exception $e) {
-            error_log('PraisonPress: Auto-sync exception: ' . $e->getMessage());
+            // error_log('PraisonPress: Auto-sync exception: ' . $e->getMessage());
         }
         
         return false;

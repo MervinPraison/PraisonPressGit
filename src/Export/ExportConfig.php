@@ -46,7 +46,7 @@ class ExportConfig {
         $parsed = parse_ini_file($this->configFile, true);
         
         if ($parsed === false) {
-            error_log('PraisonPress: Failed to parse export config file');
+            // error_log('PraisonPress: Failed to parse export config file');
             $this->config = $this->getDefaultConfig();
             return;
         }

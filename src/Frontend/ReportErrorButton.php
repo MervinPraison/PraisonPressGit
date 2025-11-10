@@ -17,12 +17,25 @@ class ReportErrorButton {
         // Enqueue scripts and styles
         add_action('wp_enqueue_scripts', [$this, 'enqueueAssets']);
         
+        // Add defer strategy to script
+        add_filter('script_loader_tag', [$this, 'addDeferStrategy'], 10, 3);
+        
         // Register AJAX endpoints
         add_action('wp_ajax_praisonpress_get_content', [$this, 'ajaxGetContent']);
         add_action('wp_ajax_nopriv_praisonpress_get_content', [$this, 'ajaxGetContent']);
         
         add_action('wp_ajax_praisonpress_submit_edit', [$this, 'ajaxSubmitEdit']);
         add_action('wp_ajax_nopriv_praisonpress_submit_edit', [$this, 'ajaxSubmitEdit']);
+    }
+    
+    /**
+     * Add defer loading strategy to script
+     */
+    public function addDeferStrategy($tag, $handle, $src) {
+        if ('praisonpress-report-error' === $handle) {
+            return str_replace(' src=', ' defer src=', $tag);
+        }
+        return $tag;
     }
     
     /**
@@ -42,13 +55,16 @@ class ReportErrorButton {
             '1.0.4'
         );
         
-        // Enqueue scripts
+        // Enqueue scripts with defer strategy
         wp_enqueue_script(
             'praisonpress-report-error',
             PRAISON_PLUGIN_URL . 'assets/js/report-error.js',
             ['jquery'],
             '1.0.1',
-            true
+            [
+                'in_footer' => true,
+                'strategy' => 'defer',
+            ]
         );
         
         // Pass data to JavaScript
@@ -129,8 +145,8 @@ class ReportErrorButton {
         // Verify nonce
         check_ajax_referer('praisonpress_report_error', 'nonce');
         
-        $postId = isset($_POST['post_id']) ? $_POST['post_id'] : 0;
-        $postType = isset($_POST['post_type']) ? sanitize_text_field($_POST['post_type']) : 'post';
+        $postId = isset($_POST['post_id']) ? intval(wp_unslash($_POST['post_id'])) : 0;
+        $postType = isset($_POST['post_type']) ? sanitize_text_field(wp_unslash($_POST['post_type'])) : 'post';
         
         if (!$postId) {
             wp_send_json_error(['message' => 'Invalid post ID']);
@@ -151,15 +167,15 @@ class ReportErrorButton {
         
         if (!$query->have_posts()) {
             // Try by slug if ID doesn't work (for file-based posts)
-            $slug = get_query_var('name');
-            if (empty($slug) && isset($_POST['post_slug'])) {
-                $slug = sanitize_title($_POST['post_slug']);
+            $postSlug = sanitize_title(get_query_var('name'));
+            if (empty($postSlug) && isset($_POST['post_slug'])) {
+                $postSlug = sanitize_title(wp_unslash($_POST['post_slug']));
             }
             
-            if ($slug) {
+            if ($postSlug) {
                 $args = [
                     'post_type' => $postType,
-                    'name' => $slug,
+                    'name' => $postSlug,
                     'posts_per_page' => 1,
                 ];
                 $query = new \WP_Query($args);
@@ -176,15 +192,15 @@ class ReportErrorButton {
         // Get the raw markdown content if it's a file-based post
         $contentFile = $this->getContentFilePath($post);
         
-        error_log('ReportError - Post: ' . $post->post_title . ', File path: ' . ($contentFile ? $contentFile : 'NOT FOUND'));
+        // error_log('ReportError - Post: ' . $post->post_title . ', File path: ' . ($contentFile ? $contentFile : 'NOT FOUND'));
         
         if ($contentFile && file_exists($contentFile)) {
             $content = file_get_contents($contentFile);
-            error_log('ReportError - Loading from FILE: ' . $contentFile);
+            // error_log('ReportError - Loading from FILE: ' . $contentFile);
         } else {
             // Fallback to post content
             $content = $post->post_content;
-            error_log('ReportError - Loading from DATABASE (file not found)');
+            // error_log('ReportError - Loading from DATABASE (file not found'));
         }
         
         // Restore original query
@@ -272,13 +288,13 @@ class ReportErrorButton {
         check_ajax_referer('praisonpress_report_error', 'nonce');
         
         // Get data
-        $content = isset($_POST['content']) ? wp_unslash($_POST['content']) : '';
-        $description = isset($_POST['description']) ? sanitize_textarea_field($_POST['description']) : '';
-        $postId = isset($_POST['post_id']) ? $_POST['post_id'] : 0;
-        $postType = isset($_POST['post_type']) ? sanitize_text_field($_POST['post_type']) : 'post';
-        $postSlug = isset($_POST['post_slug']) ? sanitize_title($_POST['post_slug']) : '';
-        $postTitle = isset($_POST['post_title']) ? sanitize_text_field($_POST['post_title']) : '';
-        $filePath = isset($_POST['file_path']) ? $_POST['file_path'] : '';
+        $content = isset($_POST['content']) ? sanitize_textarea_field(wp_unslash($_POST['content'])) : '';
+        $description = isset($_POST['description']) ? sanitize_textarea_field(wp_unslash($_POST['description'])) : '';
+        $postId = isset($_POST['post_id']) ? intval(wp_unslash($_POST['post_id'])) : 0;
+        $postType = isset($_POST['post_type']) ? sanitize_text_field(wp_unslash($_POST['post_type'])) : 'post';
+        $postSlug = isset($_POST['post_slug']) ? sanitize_title(wp_unslash($_POST['post_slug'])) : '';
+        $postTitle = isset($_POST['post_title']) ? sanitize_text_field(wp_unslash($_POST['post_title'])) : '';
+        $filePath = isset($_POST['file_path']) ? sanitize_text_field(wp_unslash($_POST['file_path'])) : '';
         
         // Validate
         if (empty($content)) {
@@ -294,7 +310,7 @@ class ReportErrorButton {
             // Ensure directory exists
             $dir = dirname($filePath);
             if (!is_dir($dir)) {
-                mkdir($dir, 0755, true);
+                wp_mkdir_p($dir);
             }
         }
         

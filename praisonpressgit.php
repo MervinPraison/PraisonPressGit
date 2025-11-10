@@ -2,7 +2,7 @@
 /**
  * Plugin Name: PraisonPressGit
  * Description: Load WordPress content from files (Markdown, JSON, YAML) without database writes, with Git-based version control
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: MervinPraison
  * Author URI: https://mer.vin
  * License: GPL v2 or later
@@ -12,7 +12,7 @@
 defined('ABSPATH') or die('Direct access not allowed');
 
 // Define constants
-define('PRAISON_VERSION', '1.0.0');
+define('PRAISON_VERSION', '1.0.1');
 define('PRAISON_PLUGIN_DIR', __DIR__);
 define('PRAISON_PLUGIN_URL', trailingslashit(plugins_url('', __FILE__)));
 
@@ -21,8 +21,8 @@ define('PRAISON_PLUGIN_URL', trailingslashit(plugins_url('', __FILE__)));
 // 2. Can be filtered: add_filter('praison_content_dir', function($dir) { return '/custom/path'; });
 // 3. Defaults to: ABSPATH . 'content' (root level, independent of WordPress)
 if (!defined('PRAISON_CONTENT_DIR')) {
-    $default_content_dir = ABSPATH . 'content';
-    define('PRAISON_CONTENT_DIR', apply_filters('praison_content_dir', $default_content_dir));
+    $praison_default_content_dir = ABSPATH . 'content';
+    define('PRAISON_CONTENT_DIR', apply_filters('praison_content_dir', $praison_default_content_dir));
 }
 
 define('PRAISON_CACHE_GROUP', 'praisonpress');

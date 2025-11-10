@@ -285,7 +285,7 @@ class Bootstrap {
             'PraisonPress',
             'PraisonPress',
             'manage_options',
-            'praisonpress',
+            'praisonpressgit',
             [$this, 'renderAdminPage'],
             'dashicons-media-text',
             30
@@ -294,11 +294,11 @@ class Bootstrap {
         // Rename the default submenu item (WordPress auto-creates one)
         // Priority: This runs at default priority 10
         add_submenu_page(
-            'praisonpress',
+            'praisonpressgit',
             'Dashboard',
             'Dashboard',
             'manage_options',
-            'praisonpress',  // Same as parent - this renames the default
+            'praisonpressgit',  // Same as parent - this renames the default
             [$this, 'renderAdminPage']
         );
         
@@ -307,7 +307,7 @@ class Bootstrap {
         // Settings will be added separately with priority 16
         add_action('admin_menu', function() {
             add_submenu_page(
-                'praisonpress',
+                'praisonpressgit',
                 'Settings',
                 'Settings',
                 'manage_options',
@@ -322,7 +322,7 @@ class Bootstrap {
      */
     public function addHistoryMenu() {
         add_submenu_page(
-            'praisonpress',
+            'praisonpressgit',
             'Version History',
             '📜 History',
             'manage_options',
@@ -557,7 +557,7 @@ status: "publish"
                 
                 // Handle OAuth callback
                 if (isset($_GET['action']) && $_GET['action'] === 'github-callback' && isset($_GET['code'])) {
-                    $code = sanitize_text_field($_GET['code']);
+                    $code = sanitize_text_field(wp_unslash($_GET['code']));
                     $tokenData = $oauth->getAccessToken($code);
                     
                     if ($tokenData && isset($tokenData['access_token'])) {
@@ -807,8 +807,8 @@ repository_url = "https://github.com/MervinPraison/PraisonPressContent"</pre>
         $redirect_nonce = wp_create_nonce('praison_cache_cleared');
         
         // Redirect back with notice
-        wp_redirect(add_query_arg([
-            'page' => 'praisonpress',
+        wp_safe_redirect(add_query_arg([
+            'page' => 'praisonpressgit',
             'cache_cleared' => '1',
             '_wpnonce' => $redirect_nonce
         ], admin_url('admin.php')));
@@ -823,9 +823,9 @@ repository_url = "https://github.com/MervinPraison/PraisonPressContent"</pre>
             wp_die('Invalid request');
         }
         
-        $hash = sanitize_text_field($_GET['hash']);
+        $hash = sanitize_text_field(wp_unslash($_GET['hash']));
         
-        if (!wp_verify_nonce($_GET['_wpnonce'], 'rollback_' . $hash)) {
+        if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'rollback_' . $hash)) {
             wp_die('Security check failed');
         }
         
@@ -835,12 +835,12 @@ repository_url = "https://github.com/MervinPraison/PraisonPressContent"</pre>
         
         // Redirect back to history page with status
         if ($result) {
-            wp_redirect(add_query_arg([
+            wp_safe_redirect(add_query_arg([
                 'page' => 'praisonpress-history',
                 'rollback' => 'success'
             ], admin_url('admin.php')));
         } else {
-            wp_redirect(add_query_arg([
+            wp_safe_redirect(add_query_arg([
                 'page' => 'praisonpress-history',
                 'rollback' => 'error'
             ], admin_url('admin.php')));

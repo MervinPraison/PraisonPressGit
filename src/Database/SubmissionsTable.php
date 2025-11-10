@@ -55,7 +55,7 @@ class SubmissionsTable {
     public function saveSubmission($userId, $prNumber, $prUrl, $postId = null, $postTitle = null) {
         global $wpdb;
         
-        $result = $wpdb->insert(
+        $result = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
             $this->tableName,
             array(
                 'user_id' => $userId,
@@ -87,19 +87,26 @@ class SubmissionsTable {
     public function getUserSubmissions($userId, $status = null, $limit = 50, $offset = 0) {
         global $wpdb;
         
-        $sql = "SELECT * FROM {$this->tableName} WHERE user_id = %d";
-        $params = array($userId);
+        $table = $wpdb->prefix . 'praisonpress_submissions';
         
         if ($status) {
-            $sql .= " AND status = %s";
-            $params[] = $status;
+            $sql = $wpdb->prepare(
+                "SELECT * FROM `{$table}` WHERE user_id = %d AND status = %s ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                $userId,
+                $status,
+                $limit,
+                $offset
+            );
+        } else {
+            $sql = $wpdb->prepare(
+                "SELECT * FROM `{$table}` WHERE user_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                $userId,
+                $limit,
+                $offset
+            );
         }
         
-        $sql .= " ORDER BY created_at DESC LIMIT %d OFFSET %d";
-        $params[] = $limit;
-        $params[] = $offset;
-        
-        return $wpdb->get_results($wpdb->prepare($sql, $params));
+        return $wpdb->get_results($sql); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
     }
     
     /**
@@ -111,16 +118,22 @@ class SubmissionsTable {
      */
     public function getUserSubmissionsCount($userId, $status = null) {
         global $wpdb;
-        
-        $sql = "SELECT COUNT(*) FROM {$this->tableName} WHERE user_id = %d";
-        $params = array($userId);
+        $table = $wpdb->prefix . 'praisonpress_submissions';
         
         if ($status) {
-            $sql .= " AND status = %s";
-            $params[] = $status;
+            $sql = $wpdb->prepare(
+                "SELECT COUNT(*) FROM `{$table}` WHERE user_id = %d AND status = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                $userId,
+                $status
+            );
+        } else {
+            $sql = $wpdb->prepare(
+                "SELECT COUNT(*) FROM `{$table}` WHERE user_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                $userId
+            );
         }
         
-        return (int) $wpdb->get_var($wpdb->prepare($sql, $params));
+        return (int) $wpdb->get_var($sql); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
     }
     
     /**
@@ -133,20 +146,24 @@ class SubmissionsTable {
      */
     public function getAllSubmissions($status = null, $limit = 50, $offset = 0) {
         global $wpdb;
-        
-        $sql = "SELECT * FROM {$this->tableName}";
-        $params = array();
+        $table = $wpdb->prefix . 'praisonpress_submissions';
         
         if ($status) {
-            $sql .= " WHERE status = %s";
-            $params[] = $status;
+            $sql = $wpdb->prepare(
+                "SELECT * FROM `{$table}` WHERE status = %s ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                $status,
+                $limit,
+                $offset
+            );
+        } else {
+            $sql = $wpdb->prepare(
+                "SELECT * FROM `{$table}` ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                $limit,
+                $offset
+            );
         }
         
-        $sql .= " ORDER BY created_at DESC LIMIT %d OFFSET %d";
-        $params[] = $limit;
-        $params[] = $offset;
-        
-        return $wpdb->get_results($wpdb->prepare($sql, $params));
+        return $wpdb->get_results($sql); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
     }
     
     /**
@@ -157,20 +174,18 @@ class SubmissionsTable {
      */
     public function getAllSubmissionsCount($status = null) {
         global $wpdb;
-        
-        $sql = "SELECT COUNT(*) FROM {$this->tableName}";
-        $params = array();
+        $table = $wpdb->prefix . 'praisonpress_submissions';
         
         if ($status) {
-            $sql .= " WHERE status = %s";
-            $params[] = $status;
+            $sql = $wpdb->prepare(
+                "SELECT COUNT(*) FROM `{$table}` WHERE status = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                $status
+            );
+            return (int) $wpdb->get_var($sql); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
         }
         
-        if (!empty($params)) {
-            return (int) $wpdb->get_var($wpdb->prepare($sql, $params));
-        }
-        
-        return (int) $wpdb->get_var($sql);
+        // No parameters, safe to use directly
+        return (int) $wpdb->get_var("SELECT COUNT(*) FROM `{$table}`"); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
     }
     
     /**
@@ -183,7 +198,7 @@ class SubmissionsTable {
     public function updateStatus($prNumber, $status) {
         global $wpdb;
         
-        $result = $wpdb->update(
+        $result = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
             $this->tableName,
             array('status' => $status),
             array('pr_number' => $prNumber),
@@ -202,9 +217,13 @@ class SubmissionsTable {
      */
     public function getSubmissionByPR($prNumber) {
         global $wpdb;
+        $table = $wpdb->prefix . 'praisonpress_submissions';
         
-        $sql = "SELECT * FROM {$this->tableName} WHERE pr_number = %d LIMIT 1";
-        return $wpdb->get_row($wpdb->prepare($sql, $prNumber));
+        $sql = $wpdb->prepare(
+            "SELECT * FROM `{$table}` WHERE pr_number = %d LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $prNumber
+        );
+        return $wpdb->get_row($sql); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
     }
     
     /**
@@ -215,11 +234,13 @@ class SubmissionsTable {
      */
     public function deleteOldSubmissions($days = 90) {
         global $wpdb;
+        $table = $wpdb->prefix . 'praisonpress_submissions';
         
-        $sql = "DELETE FROM {$this->tableName} 
-                WHERE status IN ('merged', 'closed') 
-                AND created_at < DATE_SUB(NOW(), INTERVAL %d DAY)";
+        $sql = $wpdb->prepare(
+            "DELETE FROM `{$table}` WHERE status IN ('merged', 'closed') AND created_at < DATE_SUB(NOW(), INTERVAL %d DAY)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $days
+        );
         
-        return $wpdb->query($wpdb->prepare($sql, $days));
+        return $wpdb->query($sql); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
     }
 }

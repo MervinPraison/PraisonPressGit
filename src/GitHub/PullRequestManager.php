@@ -330,7 +330,7 @@ class PullRequestManager {
         }
         
         // Log full response for debugging
-        error_log('GitHub PR Creation Failed: ' . json_encode($response));
+        // error_log('GitHub PR Creation Failed: ' . json_encode($response));
         
         return [
             'success' => false,

@@ -34,3 +34,5 @@ package-lock.json
 composer.lock
 site-config.ini
 export-config.ini
+
+*.bak

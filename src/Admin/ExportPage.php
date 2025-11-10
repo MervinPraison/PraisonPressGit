@@ -25,7 +25,7 @@ class ExportPage {
      */
     public function addMenuPage() {
         add_submenu_page(
-            'praisonpress',  // Fixed: matches the parent menu slug in Bootstrap.php
+            'praisonpressgit',  // Fixed: matches the parent menu slug in Bootstrap.php
             'Export to Markdown',
             'Export',
             'manage_options',
@@ -85,7 +85,7 @@ class ExportPage {
             return;
         }
         
-        $post_type = isset($_POST['post_type']) ? sanitize_text_field($_POST['post_type']) : 'all';
+        $post_type = isset($_POST['post_type']) ? sanitize_text_field(wp_unslash($_POST['post_type'])) : 'all';
         $batch_size = isset($_POST['batch_size']) ? intval($_POST['batch_size']) : 100;
         $push_to_github = isset($_POST['push_to_github']) && $_POST['push_to_github'] === '1';
         
@@ -211,7 +211,7 @@ class ExportPage {
         $job_data = get_transient('praison_export_' . $job_id);
         
         if (!$job_data) {
-            error_log('PraisonPress Export: Job not found - ' . $job_id);
+            // error_log('PraisonPress Export: Job not found - ' . $job_id);
             return;
         }
         
@@ -298,7 +298,7 @@ class ExportPage {
             wp_send_json_error(['message' => 'Permission denied']);
         }
         
-        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field(wp_unslash($_POST['job_id'])) : '';
         $job_data = get_transient('praison_export_' . $job_id);
         
         if (!$job_data) {
@@ -337,7 +337,7 @@ class ExportPage {
             wp_send_json_error(['message' => 'Permission denied']);
         }
         
-        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field(wp_unslash($_POST['job_id'])) : '';
         $job_data = get_transient('praison_export_' . $job_id);
         
         if ($job_data) {
@@ -445,7 +445,7 @@ class ExportPage {
                 ];
             }
         } catch (\Exception $e) {
-            error_log('PraisonPress Export: GitHub push failed: ' . $e->getMessage());
+            // error_log('PraisonPress Export: GitHub push failed: ' . $e->getMessage());
             return [
                 'success' => false,
                 'message' => 'Error pushing to GitHub: ' . $e->getMessage()

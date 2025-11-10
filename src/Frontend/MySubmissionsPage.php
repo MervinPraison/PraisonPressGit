@@ -76,22 +76,26 @@ class MySubmissionsPage {
         $userName = $currentUser->display_name;
         $isAdmin = current_user_can('manage_options');
         
-        // Allow admins to view all submissions or filter by user
+        // Allow admins to view all submissions or filter by user with nonce verification
         $viewUserId = $userId; // Default to current user
         if ($isAdmin && isset($_GET['user_id']) && !empty($_GET['user_id'])) {
-            $viewUserId = intval($_GET['user_id']);
-            $viewUser = get_user_by('id', $viewUserId);
-            if ($viewUser) {
-                $userName = $viewUser->display_name;
+            if (isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'filter_submissions')) {
+                $viewUserId = intval($_GET['user_id']);
+                $viewUser = get_user_by('id', $viewUserId);
+                if ($viewUser) {
+                    $userName = $viewUser->display_name;
+                }
             }
         } elseif ($isAdmin && isset($_GET['view']) && $_GET['view'] === 'all') {
-            $viewUserId = null; // View all users
-            $userName = 'All Users';
+            if (isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'filter_submissions')) {
+                $viewUserId = null; // View all users
+                $userName = 'All Users';
+            }
         }
         
         // Check cache first (5 minute cache)
         $cacheKey = 'praisonpress_user_submissions_' . ($viewUserId ?: 'all');
-        $userPRs = wp_cache_get($cacheKey, 'praisonpress');
+        $userPRs = wp_cache_get($cacheKey, 'praisonpressgit');
         
         if ($userPRs !== false) {
             // Return cached data
@@ -100,8 +104,13 @@ class MySubmissionsPage {
             return ob_get_clean();
         }
         
-        // Get pagination parameters
-        $paged = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+        // Get pagination parameters with nonce verification
+        $paged = 1;
+        if (isset($_GET['paged'])) {
+            if (isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'paginate_submissions')) {
+                $paged = max(1, intval($_GET['paged']));
+            }
+        }
         $per_page = 5; // Show 5 submissions per page
         $offset = ($paged - 1) * $per_page;
         
@@ -171,7 +180,7 @@ class MySubmissionsPage {
         }
         
         // Cache the results for 5 minutes
-        wp_cache_set($cacheKey, $userPRs, 'praisonpress', 300);
+        wp_cache_set($cacheKey, $userPRs, 'praisonpressgit', 300);
         
         ob_start();
         $this->renderSubmissions($userPRs, $userName, $isAdmin, $viewUserId);
@@ -209,11 +218,11 @@ class MySubmissionsPage {
                 <div class="praisonpress-submissions-list">
                     <?php foreach ($userPRs as $pr): 
                         $prNumber = $pr['number'];
-                        $prTitle = esc_html($pr['title']);
+                        $prTitle = $pr['title'];
                         $prState = $pr['state']; // open, closed
                         $prMerged = isset($pr['merged_at']) && $pr['merged_at'];
                         $prUrl = $pr['html_url'];
-                        $prCreated = date('M j, Y', strtotime($pr['created_at']));
+                        $prCreated = gmdate('M j, Y', strtotime($pr['created_at']));
                         $prAuthor = isset($pr['user']['login']) ? $pr['user']['login'] : 'Unknown';
                         
                         // Determine status
@@ -233,24 +242,17 @@ class MySubmissionsPage {
                     ?>
                         <div class="praisonpress-submission-item">
                             <div class="submission-header">
-                                <h3 class="submission-title">
-                                    <?php if (current_user_can('manage_options')): ?>
-                                        <a href="<?php echo esc_url($prUrl); ?>" target="_blank" rel="noopener">
-                                            <?php echo $prTitle; ?>
-                                        </a>
-                                    <?php else: ?>
-                                        <?php echo $prTitle; ?>
-                                    <?php endif; ?>
-                                </h3>
-                                <span class="submission-status <?php echo $statusClass; ?>">
-                                    <?php echo $statusLabel; ?>
-                                </span>
+                                <h3><?php echo esc_html($prTitle); ?></h3>
+                                <span class="submission-number">#<?php echo esc_html($prNumber); ?></span>
                             </div>
+                            
                             <div class="submission-meta">
-                                <span class="submission-number">#<?php echo $prNumber; ?></span>
-                                <span class="submission-date">Submitted on <?php echo $prCreated; ?></span>
-                                <span class="submission-author">by <?php echo esc_html($prAuthor); ?></span>
+                                <span class="submission-status <?php echo esc_attr($statusClass); ?>">
+                                    <?php echo esc_html($statusLabel); ?>
+                                </span>
+                                <span class="submission-date"><?php echo esc_html($prCreated); ?></span>
                             </div>
+                            
                             <?php if (!empty($pr['body'])): ?>
                                 <div class="submission-description">
                                     <?php echo esc_html(wp_trim_words($pr['body'], 30)); ?>
