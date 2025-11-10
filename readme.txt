@@ -171,7 +171,32 @@ Yes, if Git is available, you can rollback any file to a previous version from t
 * Auto-update detection for file changes
 * WordPress filter compatibility
 
+== Changelog ==
+
+= 1.0.1 =
+* Fixed all WordPress coding standards compliance issues
+* Added proper output escaping throughout the plugin
+* Implemented nonce verification for all GET parameters
+* Fixed text domain consistency (changed to 'praisonpressgit')
+* Added proper global variable prefixes
+* Replaced deprecated functions (strip_tags → wp_strip_all_tags, mkdir → wp_mkdir_p)
+* Improved database query security with proper prepared statements
+* Added phpcs ignore comments for unavoidable false positives
+* Plugin now passes WordPress.org plugin check with 0 warnings
+* Ready for WordPress.org directory submission
+
+= 1.0.0 =
+* Initial release
+* File-based content management with Markdown support
+* Git version control integration
+* GitHub OAuth and pull request management
+* Custom post type support
+* Built-in caching system
+
 == Upgrade Notice ==
+
+= 1.0.1 =
+Major security and code quality improvements. Recommended update for all users.
 
 = 1.0.0 =
 Initial release of PraisonPressGit. Install and activate to start using file-based content management.
