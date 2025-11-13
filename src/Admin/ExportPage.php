@@ -25,7 +25,7 @@ class ExportPage {
      */
     public function addMenuPage() {
         add_submenu_page(
-            'praisonpressgit',  // Fixed: matches the parent menu slug in Bootstrap.php
+            'praisonai-git-posts',  // Fixed: matches the parent menu slug in Bootstrap.php
             'Export to Markdown',
             'Export',
             'manage_options',

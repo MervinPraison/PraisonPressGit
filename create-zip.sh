@@ -3,15 +3,15 @@
 
 cd "$(dirname "$0")/.."
 
-zip -r praisonpressgit.zip praisonpressgit/ \
+zip -r praisonai-git-posts.zip praisonai-git-posts/ \
   -x "*.git*" \
   -x "*.DS_Store" \
-  -x "praisonpressgit/.gitignore" \
-  -x "praisonpressgit/create-zip.sh" \
-  -x "praisonpressgit/create-my-submissions-page.php" \
-  -x "praisonpressgit/.vscode/*" \
-  -x "praisonpressgit/site-config.ini" \
-  -x "praisonpressgit/*.bak"
+  -x "praisonai-git-posts/.gitignore" \
+  -x "praisonai-git-posts/create-zip.sh" \
+  -x "praisonai-git-posts/create-my-submissions-page.php" \
+  -x "praisonai-git-posts/.vscode/*" \
+  -x "praisonai-git-posts/site-config.ini" \
+  -x "praisonai-git-posts/*.bak"
 
-echo "✅ ZIP created: praisonpressgit.zip"
+echo "✅ ZIP created: praisonai-git-posts.zip"
 echo "Ready for WordPress.org submission"

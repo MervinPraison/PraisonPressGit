@@ -1,10 +1,10 @@
-=== PraisonPressGit ===
+=== PraisonAI Git Posts ===
 Contributors: mervinpraison
 Tags: markdown, git, content-management, file-based, version-control
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Load WordPress content from files (Markdown, JSON, YAML) without database writes
 
 == Description ==
 
-**PraisonPressGit** is a revolutionary WordPress plugin that enables file-based content management with Git version control integration. Store your posts, pages, and custom post types as Markdown files while maintaining full WordPress compatibility.
+**PraisonAI Git Posts** is a revolutionary WordPress plugin that enables file-based content management with Git version control integration. Store your posts, pages, and custom post types as Markdown files while maintaining full WordPress compatibility.
 
 = Key Features =
 
@@ -73,7 +73,7 @@ Write your content in **Markdown** format.
 = Automatic Installation =
 
 1. Go to Plugins > Add New
-2. Search for "PraisonPressGit"
+2. Search for "PraisonAI Git Posts"
 3. Click "Install Now"
 4. Activate the plugin
 
@@ -136,7 +136,7 @@ The plugin uses WordPress transients for caching. Cache automatically invalidate
 
 = How do I clear the cache? =
 
-Go to PraisonPressGit → Clear Cache in the WordPress admin, or use the top admin bar menu.
+Go to PraisonAI Git Posts → Clear Cache in the WordPress admin, or use the top admin bar menu.
 
 = Is Git required? =
 
@@ -144,7 +144,7 @@ No, Git is optional. The plugin works without Git, but version control features 
 
 = How do I track version history? =
 
-The plugin includes Git integration. If Git is installed, file changes are automatically tracked. View history in PraisonPressGit → Version History.
+The plugin includes Git integration. If Git is installed, file changes are automatically tracked. View history in PraisonAI Git Posts → Version History.
 
 = Can I rollback to previous versions? =
 
@@ -173,6 +173,12 @@ Yes, if Git is available, you can rollback any file to a previous version from t
 
 == Changelog ==
 
+= 1.0.2 =
+* Changed plugin name from "PraisonPressGit" to "PraisonAI Git Posts" to comply with WordPress trademark guidelines
+* Updated text domain from 'praisonpressgit' to 'praisonai-git-posts'
+* Updated all internal references and cache keys
+* No functional changes - maintains full backward compatibility
+
 = 1.0.1 =
 * Fixed all WordPress coding standards compliance issues
 * Added proper output escaping throughout the plugin
@@ -195,16 +201,19 @@ Yes, if Git is available, you can rollback any file to a previous version from t
 
 == Upgrade Notice ==
 
+= 1.0.2 =
+Plugin renamed from "PraisonPressGit" to "PraisonAI Git Posts" to comply with WordPress trademark guidelines. No functional changes.
+
 = 1.0.1 =
 Major security and code quality improvements. Recommended update for all users.
 
 = 1.0.0 =
-Initial release of PraisonPressGit. Install and activate to start using file-based content management.
+Initial release. Install and activate to start using file-based content management.
 
 == Development ==
 
-* GitHub Repository: https://github.com/MervinPraison/PraisonPressGit
-* Report Issues: https://github.com/MervinPraison/PraisonPressGit/issues
+* GitHub Repository: https://github.com/MervinPraison/PraisonAI-Git-Posts
+* Report Issues: https://github.com/MervinPraison/PraisonAI-Git-Posts/issues
 * Author Website: https://mer.vin
 
 == Credits ==
