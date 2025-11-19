@@ -95,7 +95,7 @@ class MySubmissionsPage {
         
         // Check cache first (5 minute cache)
         $cacheKey = 'praisonpress_user_submissions_' . ($viewUserId ?: 'all');
-        $userPRs = wp_cache_get($cacheKey, 'praisonai-git-posts');
+        $userPRs = wp_cache_get($cacheKey, 'praison-file-content-git');
         
         if ($userPRs !== false) {
             // Return cached data
@@ -180,7 +180,7 @@ class MySubmissionsPage {
         }
         
         // Cache the results for 5 minutes
-        wp_cache_set($cacheKey, $userPRs, 'praisonai-git-posts', 300);
+        wp_cache_set($cacheKey, $userPRs, 'praison-file-content-git', 300);
         
         ob_start();
         $this->renderSubmissions($userPRs, $userName, $isAdmin, $viewUserId);

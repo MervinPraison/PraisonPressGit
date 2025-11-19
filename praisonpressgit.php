@@ -6,7 +6,7 @@
  * Author: MervinPraison
  * Author URI: https://mer.vin
  * License: GPL v2 or later
- * Text Domain: praisonai-git-posts
+ * Text Domain: praison-file-content-git
  */
 
 defined('ABSPATH') or die('Direct access not allowed');

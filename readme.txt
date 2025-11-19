@@ -175,7 +175,7 @@ Yes, if Git is available, you can rollback any file to a previous version from t
 
 = 1.0.2 =
 * Changed plugin name from "PraisonPressGit" to "PraisonAI Git Posts" to comply with WordPress trademark guidelines
-* Updated text domain from 'praisonpressgit' to 'praisonai-git-posts'
+* Updated text domain from 'praisonpressgit' to 'praison-file-content-git'
 * Updated all internal references and cache keys
 * No functional changes - maintains full backward compatibility
 

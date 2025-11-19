@@ -285,7 +285,7 @@ class Bootstrap {
             'PraisonPress',
             'PraisonPress',
             'manage_options',
-            'praisonai-git-posts',
+            'praison-file-content-git',
             [$this, 'renderAdminPage'],
             'dashicons-media-text',
             30
@@ -294,11 +294,11 @@ class Bootstrap {
         // Rename the default submenu item (WordPress auto-creates one)
         // Priority: This runs at default priority 10
         add_submenu_page(
-            'praisonai-git-posts',
+            'praison-file-content-git',
             'Dashboard',
             'Dashboard',
             'manage_options',
-            'praisonai-git-posts',  // Same as parent - this renames the default
+            'praison-file-content-git',  // Same as parent - this renames the default
             [$this, 'renderAdminPage']
         );
         
@@ -307,7 +307,7 @@ class Bootstrap {
         // Settings will be added separately with priority 16
         add_action('admin_menu', function() {
             add_submenu_page(
-                'praisonai-git-posts',
+                'praison-file-content-git',
                 'Settings',
                 'Settings',
                 'manage_options',
@@ -322,7 +322,7 @@ class Bootstrap {
      */
     public function addHistoryMenu() {
         add_submenu_page(
-            'praisonai-git-posts',
+            'praison-file-content-git',
             'Version History',
             '📜 History',
             'manage_options',
@@ -808,7 +808,7 @@ repository_url = "https://github.com/MervinPraison/PraisonPressContent"</pre>
         
         // Redirect back with notice
         wp_safe_redirect(add_query_arg([
-            'page' => 'praisonai-git-posts',
+            'page' => 'praison-file-content-git',
             'cache_cleared' => '1',
             '_wpnonce' => $redirect_nonce
         ], admin_url('admin.php')));

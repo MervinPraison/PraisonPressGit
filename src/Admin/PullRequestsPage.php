@@ -53,7 +53,7 @@ class PullRequestsPage {
      */
     public function addAdminMenu() {
         add_submenu_page(
-            'praisonai-git-posts',
+            'praison-file-content-git',
             'Pull Requests',
             'Pull Requests',
             'manage_options',
