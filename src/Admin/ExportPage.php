@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Admin;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * Export Page - Admin UI for exporting content to Markdown
  * 
@@ -115,7 +117,7 @@ class ExportPage {
             $failed = 0;
             
             foreach ($post_types as $type) {
-                $output_dir = WP_CONTENT_DIR . '/../content/' . $type;
+                $output_dir = PRAISON_CONTENT_DIR . '/' . $type;
                 if (!is_dir($output_dir)) {
                     wp_mkdir_p($output_dir);
                 }
@@ -222,7 +224,7 @@ class ExportPage {
         }
         
         $batch_size = $job_data['batch_size'];
-        $output_dir = WP_CONTENT_DIR . '/../content/' . $post_type;
+        $output_dir = PRAISON_CONTENT_DIR . '/' . $post_type;
         
         // Ensure output directory exists
         if (!is_dir($output_dir)) {

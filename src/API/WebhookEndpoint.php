@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\API;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use PraisonPress\GitHub\SyncManager;
 
 /**

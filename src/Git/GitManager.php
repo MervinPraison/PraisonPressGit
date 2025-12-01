@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Git;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * Git Manager for Version Control
  * Tracks changes to markdown files

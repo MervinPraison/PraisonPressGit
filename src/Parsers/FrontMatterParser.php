@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Parsers;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * Parse YAML front matter from Markdown files
  */

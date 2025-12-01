@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Admin;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use PraisonPress\Git\GitManager;
 
 /**
@@ -12,6 +14,35 @@ class HistoryPage {
     
     public function __construct() {
         $this->gitManager = new GitManager();
+        add_action('admin_enqueue_scripts', [$this, 'enqueueScripts']);
+    }
+    
+    /**
+     * Enqueue scripts and styles
+     */
+    public function enqueueScripts($hook) {
+        if ($hook !== 'praisonpress_page_praisonpress-history') {
+            return;
+        }
+        
+        wp_enqueue_style(
+            'praison-history-page',
+            plugins_url('../../assets/css/history-page.css', __FILE__),
+            [],
+            '1.0.2'
+        );
+        
+        wp_enqueue_script(
+            'praison-history-page',
+            plugins_url('../../assets/js/history-page.js', __FILE__),
+            ['jquery'],
+            '1.0.2',
+            true
+        );
+        
+        wp_localize_script('praison-history-page', 'praisonHistoryPage', [
+            'adminPostUrl' => admin_url('admin-post.php'),
+        ]);
     }
     
     /**
@@ -159,62 +190,6 @@ class HistoryPage {
                 </div>
             </div>
         </div>
-        
-        <script>
-        jQuery(document).ready(function($) {
-            var rollbackHash = '';
-            var rollbackNonce = '';
-            
-            $('.praisonpress-rollback-btn').on('click', function() {
-                var $btn = $(this);
-                rollbackHash = $btn.data('hash');
-                rollbackNonce = $btn.data('nonce');
-                var message = $btn.data('message');
-                
-                $('#praisonpress-rollback-message').text('Rollback to: ' + message);
-                $('#praisonpress-rollback-modal').css('display', 'flex').hide().fadeIn(200);
-            });
-            
-            $('.praisonpress-modal-close').on('click', function() {
-                $('#praisonpress-rollback-modal').fadeOut(200);
-            });
-            
-            $('#praisonpress-rollback-modal').on('click', function(e) {
-                if (e.target === this) {
-                    $(this).fadeOut(200);
-                }
-            });
-            
-            $(document).on('keydown', function(e) {
-                if (e.key === 'Escape' && $('#praisonpress-rollback-modal').is(':visible')) {
-                    $('#praisonpress-rollback-modal').fadeOut(200);
-                }
-            });
-            
-            $('#praisonpress-confirm-rollback').on('click', function() {
-                var $btn = $(this);
-                $btn.prop('disabled', true).text('Rolling back...');
-                
-                var url = '<?php echo esc_url(admin_url('admin-post.php')); ?>?action=praison_rollback&hash=' + rollbackHash + '&_wpnonce=' + rollbackNonce;
-                window.location.href = url;
-            });
-        });
-        </script>
-        
-        <style>
-            .card {
-                background: white;
-                border: 1px solid #ccd0d4;
-                padding: 20px;
-                margin-top: 20px;
-                box-shadow: 0 1px 1px rgba(0,0,0,.04);
-                width: 100%;
-                box-sizing: border-box;
-            }
-            .card h2 {
-                margin-top: 0;
-            }
-        </style>
         <?php
     }
     
@@ -306,21 +281,6 @@ class HistoryPage {
                 </div>
             </div>
         </div>
-        
-        <style>
-            .card {
-                background: white;
-                border: 1px solid #ccd0d4;
-                padding: 20px;
-                margin-top: 20px;
-                box-shadow: 0 1px 1px rgba(0,0,0,.04);
-                width: 100%;
-                box-sizing: border-box;
-            }
-            .card h2 {
-                margin-top: 0;
-            }
-        </style>
         <?php
     }
 }

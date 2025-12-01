@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Parsers;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * Simple Markdown to HTML parser
  * Supports basic Markdown syntax

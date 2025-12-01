@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Core;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * Manage multiple custom post types for file-based content
  */

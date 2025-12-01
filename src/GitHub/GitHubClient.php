@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\GitHub;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * GitHub API Client
  * Handles authentication and API requests to GitHub

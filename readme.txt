@@ -4,7 +4,7 @@ Tags: markdown, git, content-management, file-based, version-control
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -104,6 +104,33 @@ Or use a filter:
     return '/custom/path/to/content';
 });`
 
+== External Services ==
+
+This plugin connects to external services for certain features:
+
+= GitHub API =
+
+**What it is:** GitHub's REST API (https://api.github.com) is used for version control and collaboration features.
+
+**When it's used:** The plugin connects to GitHub API when you:
+- Enable GitHub OAuth authentication
+- Create or manage pull requests
+- Sync content with a GitHub repository
+- View pull request details and changes
+
+**What data is sent:** 
+- Repository information (owner, name)
+- Authentication tokens (OAuth)
+- Commit messages and file changes
+- Pull request data
+
+**User consent:** GitHub features are optional and only activated when you configure GitHub integration in the plugin settings. No data is sent to GitHub unless you explicitly enable and configure GitHub features.
+
+**Service information:**
+- Service provider: GitHub, Inc.
+- Terms of service: https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+- Privacy policy: https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
+
 == Frequently Asked Questions ==
 
 = Does this replace the WordPress database? =
@@ -173,6 +200,15 @@ Yes, if Git is available, you can rollback any file to a previous version from t
 
 == Changelog ==
 
+= 1.0.3 =
+* Fixed all WordPress.org plugin review issues
+* Removed not permitted .ini.example files
+* Moved all inline CSS/JS to properly enqueued external files
+* Added comprehensive external service documentation for GitHub API
+* Fixed file/directory location references to use WordPress-approved methods
+* Added ABSPATH security checks to all PHP files
+* Ready for WordPress.org approval
+
 = 1.0.2 =
 * Changed plugin name from "PraisonPressGit" to "PraisonAI Git Posts" to comply with WordPress trademark guidelines
 * Updated text domain from 'praisonpressgit' to 'praison-file-content-git'
@@ -200,6 +236,9 @@ Yes, if Git is available, you can rollback any file to a previous version from t
 * Built-in caching system
 
 == Upgrade Notice ==
+
+= 1.0.3 =
+WordPress.org compliance update. Fixed all plugin review issues including security improvements and proper asset enqueuing.
 
 = 1.0.2 =
 Plugin renamed from "PraisonPressGit" to "PraisonAI Git Posts" to comply with WordPress trademark guidelines. No functional changes.

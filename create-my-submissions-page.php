@@ -5,7 +5,11 @@
  */
 
 // Load WordPress
-require_once(__DIR__ . '/../../../wp-load.php');
+if (!defined('ABSPATH')) {
+    require_once(__DIR__ . '/../../../wp-load.php');
+}
+
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 // Check if page already exists
 $praison_existing_page = get_page_by_path('my-submissions');

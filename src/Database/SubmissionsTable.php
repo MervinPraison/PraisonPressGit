@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Database;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * Submissions Table Manager
  * Handles database operations for PR submissions tracking

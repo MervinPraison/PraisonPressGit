@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\GitHub;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use PraisonPress\Git\GitManager;
 
 /**

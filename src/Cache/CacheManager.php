@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Cache;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * Simple cache manager using WordPress transients
  */

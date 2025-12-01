@@ -1,0 +1,59 @@
+.praisonpress-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100000;
+}
+.praisonpress-modal-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 100001;
+    max-width: 500px;
+    width: 90%;
+}
+.praisonpress-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.praisonpress-modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+.praisonpress-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+}
+.praisonpress-modal-close:hover {
+    color: #000;
+}
+.praisonpress-modal-body {
+    padding: 20px;
+}
+.praisonpress-modal-body p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+.praisonpress-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #ddd;
+    text-align: right;
+}
+.praisonpress-modal-footer .button {
+    margin-left: 10px;
+}

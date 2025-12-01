@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Loaders;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use PraisonPress\Parsers\MarkdownParser;
 use PraisonPress\Parsers\FrontMatterParser;
 use PraisonPress\Cache\CacheManager;

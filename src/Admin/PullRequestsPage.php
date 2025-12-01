@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Admin;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * Pull Requests Admin Page
  * Displays and manages GitHub pull requests from WordPress admin
@@ -46,6 +48,31 @@ class PullRequestsPage {
         add_action('admin_menu', [$this, 'addAdminMenu'], 25);
         add_action('admin_post_praisonpress_merge_pr', [$this, 'handleMergePR']);
         add_action('admin_post_praisonpress_close_pr', [$this, 'handleClosePR']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueueScripts']);
+    }
+    
+    /**
+     * Enqueue scripts and styles
+     */
+    public function enqueueScripts($hook) {
+        if ($hook !== 'praisonpress_page_praisonpress-pull-requests') {
+            return;
+        }
+        
+        wp_enqueue_style(
+            'praison-pull-requests-page',
+            plugins_url('../../assets/css/pull-requests-page.css', __FILE__),
+            [],
+            '1.0.2'
+        );
+        
+        wp_enqueue_script(
+            'praison-pull-requests-page',
+            plugins_url('../../assets/js/pull-requests-page.js', __FILE__),
+            ['jquery'],
+            '1.0.2',
+            true
+        );
     }
     
     /**
@@ -411,145 +438,6 @@ class PullRequestsPage {
                 </div>
             </div>
         </div>
-        
-        <style>
-            .praisonpress-modal-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.7);
-                z-index: 100000;
-            }
-            .praisonpress-modal-dialog {
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: #fff;
-                border-radius: 4px;
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-                z-index: 100001;
-                max-width: 500px;
-                width: 90%;
-            }
-            .praisonpress-modal-header {
-                padding: 20px;
-                border-bottom: 1px solid #ddd;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            .praisonpress-modal-header h2 {
-                margin: 0;
-                font-size: 18px;
-            }
-            .praisonpress-modal-close {
-                background: none;
-                border: none;
-                font-size: 28px;
-                line-height: 1;
-                cursor: pointer;
-                color: #666;
-            }
-            .praisonpress-modal-close:hover {
-                color: #000;
-            }
-            .praisonpress-modal-body {
-                padding: 20px;
-            }
-            .praisonpress-modal-body p {
-                margin: 0;
-                font-size: 14px;
-                line-height: 1.6;
-            }
-            .praisonpress-modal-footer {
-                padding: 15px 20px;
-                border-top: 1px solid #ddd;
-                text-align: right;
-            }
-            .praisonpress-modal-footer .button {
-                margin-left: 10px;
-            }
-        </style>
-        
-        <script>
-        jQuery(document).ready(function($) {
-            var confirmCallback = null;
-            
-            // Show modal
-            function showModal(title, message, callback) {
-                $('#praisonpress-modal-title').text(title);
-                $('#praisonpress-modal-message').text(message);
-                confirmCallback = callback;
-                $('#praisonpress-confirm-modal').fadeIn(200);
-            }
-            
-            // Hide modal
-            function hideModal() {
-                $('#praisonpress-confirm-modal').fadeOut(200);
-                confirmCallback = null;
-            }
-            
-            // Merge PR button
-            $('.praisonpress-merge-pr-btn').on('click', function() {
-                var $btn = $(this);
-                var prNumber = $btn.data('pr-number');
-                var prTitle = $btn.data('pr-title');
-                var mergeUrl = $btn.data('merge-url');
-                
-                showModal(
-                    'Merge Pull Request',
-                    'Are you sure you want to merge PR #' + prNumber + ': "' + prTitle + '"? This will merge the changes into the main branch and sync the content.',
-                    function() {
-                        window.location.href = mergeUrl;
-                    }
-                );
-            });
-            
-            // Close PR button
-            $('.praisonpress-close-pr-btn').on('click', function() {
-                var $btn = $(this);
-                var prNumber = $btn.data('pr-number');
-                var prTitle = $btn.data('pr-title');
-                var closeUrl = $btn.data('close-url');
-                
-                showModal(
-                    'Close Pull Request',
-                    'Are you sure you want to close PR #' + prNumber + ': "' + prTitle + '"? This will reject the changes without merging.',
-                    function() {
-                        window.location.href = closeUrl;
-                    }
-                );
-            });
-            
-            // Confirm button
-            $('.praisonpress-modal-confirm').on('click', function() {
-                if (confirmCallback) {
-                    confirmCallback();
-                }
-                hideModal();
-            });
-            
-            // Cancel button
-            $('.praisonpress-modal-cancel, .praisonpress-modal-close').on('click', function() {
-                hideModal();
-            });
-            
-            // Close on overlay click
-            $('.praisonpress-modal-overlay').on('click', function() {
-                hideModal();
-            });
-            
-            // Close on Escape key
-            $(document).on('keydown', function(e) {
-                if (e.key === 'Escape' && $('#praisonpress-confirm-modal').is(':visible')) {
-                    hideModal();
-                }
-            });
-        });
-        </script>
         <?php
     }
     

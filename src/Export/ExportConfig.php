@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Export;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * Export Configuration Manager
  * 

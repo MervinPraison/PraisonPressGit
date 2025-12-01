@@ -269,7 +269,8 @@ function export_post_to_markdown($post, $output_dir) {
  */
 function export_posts_to_markdown($post_type = 'post', $output_dir = null) {
     if (!$output_dir) {
-        $output_dir = WP_CONTENT_DIR . '/praison-export/' . $post_type;
+        $upload_dir = wp_upload_dir();
+        $output_dir = $upload_dir['basedir'] . '/praison-export/' . $post_type;
     }
     
     echo "\n🚀 Starting export...\n";
@@ -326,7 +327,13 @@ function export_posts_to_markdown($post_type = 'post', $output_dir = null) {
  */
 function export_all_post_types($base_output_dir = null) {
     if (!$base_output_dir) {
-        $base_output_dir = WP_CONTENT_DIR . '/../content';
+        // Use the PRAISON_CONTENT_DIR constant if defined, otherwise use uploads dir
+        if (defined('PRAISON_CONTENT_DIR')) {
+            $base_output_dir = PRAISON_CONTENT_DIR;
+        } else {
+            $upload_dir = wp_upload_dir();
+            $base_output_dir = $upload_dir['basedir'] . '/content';
+        }
     }
     
     echo "\n🚀 Exporting ALL post types...\n";
@@ -391,7 +398,16 @@ if (php_sapi_name() === 'cli' && isset($argc)) {
     } else {
         // Arguments provided - export specific post type
         $post_type = isset($argv[1]) ? $argv[1] : 'post';
-        $praison_output_dir = isset($argv[2]) ? $argv[2] : WP_CONTENT_DIR . '/../content/' . $post_type;
+        if (isset($argv[2])) {
+            $praison_output_dir = $argv[2];
+        } else {
+            if (defined('PRAISON_CONTENT_DIR')) {
+                $praison_output_dir = PRAISON_CONTENT_DIR . '/' . $post_type;
+            } else {
+                $upload_dir = wp_upload_dir();
+                $praison_output_dir = $upload_dir['basedir'] . '/content/' . $post_type;
+            }
+        }
         
         export_posts_to_markdown($post_type, $praison_output_dir);
     }

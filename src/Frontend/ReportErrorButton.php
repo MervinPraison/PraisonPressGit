@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Frontend;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * Report Error Button
  * Adds a "Report Error" button to frontend content pages

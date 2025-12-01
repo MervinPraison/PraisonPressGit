@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Cache;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * Smart Cache Invalidator
  * Intelligently clears only the cache for affected files/posts after PR merge

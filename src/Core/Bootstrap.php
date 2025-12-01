@@ -1,6 +1,8 @@
 <?php
 namespace PraisonPress\Core;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use PraisonPress\Loaders\PostLoader;
 use PraisonPress\Cache\CacheManager;
 use PraisonPress\Admin\ExportPage;

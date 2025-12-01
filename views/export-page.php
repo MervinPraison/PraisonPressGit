@@ -67,7 +67,7 @@ if (!defined('ABSPATH')) exit;
                 <tr>
                     <th scope="row"><?php echo esc_html__('Output Directory', 'praison-file-content-git'); ?></th>
                     <td>
-                        <code><?php echo esc_html(WP_CONTENT_DIR . '/../content/'); ?></code>
+                        <code><?php echo esc_html(PRAISON_CONTENT_DIR); ?></code>
                         <p class="description">
                             <?php echo esc_html__('Files will be organized by post type (e.g., /content/posts/, /content/pages/)', 'praison-file-content-git'); ?>
                         </p>
@@ -192,7 +192,7 @@ if (!defined('ABSPATH')) exit;
             
             <p class="description">
                 <?php echo esc_html__('Files have been exported to:', 'praison-file-content-git'); ?>
-                <code><?php echo esc_html(WP_CONTENT_DIR . '/../content/'); ?></code>
+                <code><?php echo esc_html(PRAISON_CONTENT_DIR); ?></code>
             </p>
             
             <p class="submit">

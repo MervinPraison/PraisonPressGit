@@ -2,7 +2,7 @@
 /**
  * Plugin Name: PraisonAI Git Posts
  * Description: Load WordPress content from files (Markdown, JSON, YAML) without database writes, with Git-based version control
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: MervinPraison
  * Author URI: https://mer.vin
  * License: GPL v2 or later
@@ -12,16 +12,17 @@
 defined('ABSPATH') or die('Direct access not allowed');
 
 // Define constants
-define('PRAISON_VERSION', '1.0.2');
+define('PRAISON_VERSION', '1.0.3');
 define('PRAISON_PLUGIN_DIR', __DIR__);
 define('PRAISON_PLUGIN_URL', trailingslashit(plugins_url('', __FILE__)));
 
 // Content directory - Hybrid approach for maximum flexibility:
 // 1. Can be overridden in wp-config.php: define('PRAISON_CONTENT_DIR', '/custom/path');
 // 2. Can be filtered: add_filter('praison_content_dir', function($dir) { return '/custom/path'; });
-// 3. Defaults to: ABSPATH . 'content' (root level, independent of WordPress)
+// 3. Defaults to: wp-content/uploads/praison-content (WordPress standard location)
 if (!defined('PRAISON_CONTENT_DIR')) {
-    $praison_default_content_dir = ABSPATH . 'content';
+    $praison_upload_dir = wp_upload_dir();
+    $praison_default_content_dir = $praison_upload_dir['basedir'] . '/praison-content';
     define('PRAISON_CONTENT_DIR', apply_filters('praison_content_dir', $praison_default_content_dir));
 }
 
