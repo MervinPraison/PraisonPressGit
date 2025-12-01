@@ -4,7 +4,7 @@ Tags: markdown, git, content-management, file-based, version-control
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -200,6 +200,10 @@ Yes, if Git is available, you can rollback any file to a previous version from t
 
 == Changelog ==
 
+= 1.0.4 =
+* Fixed WordPress coding standards - prefixed all global variables with plugin prefix
+* Resolved NonPrefixedVariableFound issue in export-to-markdown.php
+
 = 1.0.3 =
 * Fixed all WordPress.org plugin review issues
 * Removed not permitted .ini.example files
@@ -236,6 +240,9 @@ Yes, if Git is available, you can rollback any file to a previous version from t
 * Built-in caching system
 
 == Upgrade Notice ==
+
+= 1.0.4 =
+WordPress coding standards compliance update. Fixed variable naming conventions.
 
 = 1.0.3 =
 WordPress.org compliance update. Fixed all plugin review issues including security improvements and proper asset enqueuing.

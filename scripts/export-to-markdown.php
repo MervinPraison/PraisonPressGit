@@ -269,8 +269,8 @@ function export_post_to_markdown($post, $output_dir) {
  */
 function export_posts_to_markdown($post_type = 'post', $output_dir = null) {
     if (!$output_dir) {
-        $upload_dir = wp_upload_dir();
-        $output_dir = $upload_dir['basedir'] . '/praison-export/' . $post_type;
+        $praison_upload_dir = wp_upload_dir();
+        $output_dir = $praison_upload_dir['basedir'] . '/praison-export/' . $post_type;
     }
     
     echo "\n🚀 Starting export...\n";
@@ -331,8 +331,8 @@ function export_all_post_types($base_output_dir = null) {
         if (defined('PRAISON_CONTENT_DIR')) {
             $base_output_dir = PRAISON_CONTENT_DIR;
         } else {
-            $upload_dir = wp_upload_dir();
-            $base_output_dir = $upload_dir['basedir'] . '/content';
+            $praison_upload_dir = wp_upload_dir();
+            $base_output_dir = $praison_upload_dir['basedir'] . '/content';
         }
     }
     
@@ -404,8 +404,8 @@ if (php_sapi_name() === 'cli' && isset($argc)) {
             if (defined('PRAISON_CONTENT_DIR')) {
                 $praison_output_dir = PRAISON_CONTENT_DIR . '/' . $post_type;
             } else {
-                $upload_dir = wp_upload_dir();
-                $praison_output_dir = $upload_dir['basedir'] . '/content/' . $post_type;
+                $praison_upload_dir = wp_upload_dir();
+                $praison_output_dir = $praison_upload_dir['basedir'] . '/content/' . $post_type;
             }
         }
         
