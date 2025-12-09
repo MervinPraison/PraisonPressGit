@@ -4,7 +4,7 @@ Tags: markdown, git, content-management, file-based, version-control
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -199,6 +199,11 @@ Yes, if Git is available, you can rollback any file to a previous version from t
 * WordPress filter compatibility
 
 == Changelog ==
+
+= 1.0.5 =
+* SECURITY FIX: Properly blocked direct file access in scripts/export-to-markdown.php and create-my-submissions-page.php
+* These files were attempting to load WordPress before checking ABSPATH, which defeated the security check
+* All PHP files now immediately exit if accessed directly, as required by WordPress.org guidelines
 
 = 1.0.4 =
 * Fixed WordPress coding standards - prefixed all global variables with plugin prefix

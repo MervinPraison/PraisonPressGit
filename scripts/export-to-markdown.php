@@ -19,26 +19,8 @@
  *   wp eval-file export-to-markdown.php
  */
 
-// Load WordPress if not already loaded
-if (!defined('ABSPATH')) {
-    // Try to find wp-load.php
-    $praison_wp_load_paths = [
-        __DIR__ . '/../../../../wp-load.php',
-        __DIR__ . '/../../../wp-load.php',
-        dirname(dirname(dirname(dirname(__DIR__)))) . '/wp-load.php',
-    ];
-    
-    foreach ($praison_wp_load_paths as $path) {
-        if (file_exists($path)) {
-            require_once $path;
-            break;
-        }
-    }
-    
-    if (!defined('ABSPATH')) {
-        die("Error: Could not find WordPress installation.\n");
-    }
-}
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
  * Convert HTML content to Markdown
